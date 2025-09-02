@@ -163,17 +163,21 @@ class CircuitSimulator {
         gates.forEach(gate => {
             gate.inputs = [];
             
-            // Get input values from neighboring components
-            const neighbors = this.grid.getNeighbors(gate.gridX, gate.gridY);
+            // For 2x1 gates, check inputs at both grid positions
+            const inputPositions = [
+                { x: gate.gridX - 1, y: gate.gridY },     // Top input (left of first cell)
+                { x: gate.gridX - 1, y: gate.gridY + 1 }  // Bottom input (left of second cell)
+            ];
             
-            for (const neighbor of neighbors) {
-                const component = neighbor.component;
-                
-                // Check if this is an input connection (left side of gate)
-                if (neighbor.direction.dx === -1) { // Coming from the left
+            inputPositions.forEach(pos => {
+                const component = this.grid.getComponent(pos.x, pos.y);
+                if (component && component !== gate) {
                     gate.inputs.push(component.powered);
                 }
-            }
+            });
+            
+            // Limit to 2 inputs maximum for proper gate behavior
+            gate.inputs = gate.inputs.slice(0, 2);
             
             // Calculate gate output
             gate.update();
@@ -267,6 +271,198 @@ class CircuitSimulator {
         });
         
         return [battery1, battery2, switch1, switch2, wire1, wire2, andGate, led];
+    }
+    
+    // Create XOR gate demonstration circuit
+    createXORDemo() {
+        this.grid.clear();
+        
+        // Create XOR gate demonstration with two inputs and output LED
+        const battery1 = ComponentFactory.create('battery', 0, 0);
+        const battery2 = ComponentFactory.create('battery', 0, 40);
+        const switch1 = ComponentFactory.create('switch', 20, 0);
+        const switch2 = ComponentFactory.create('switch', 20, 40);
+        const wire1 = ComponentFactory.create('wire', 40, 0);
+        const wire2 = ComponentFactory.create('wire', 40, 40);
+        const xorGate = ComponentFactory.create('xor-gate', 60, 20);
+        const led = ComponentFactory.create('led', 80, 20);
+        
+        // Place components
+        this.grid.placeComponent(battery1, 0, 0);
+        this.grid.placeComponent(battery2, 0, 2);
+        this.grid.placeComponent(switch1, 1, 0);
+        this.grid.placeComponent(switch2, 1, 2);
+        this.grid.placeComponent(wire1, 2, 0);
+        this.grid.placeComponent(wire2, 2, 2);
+        this.grid.placeComponent(xorGate, 3, 1);
+        this.grid.placeComponent(led, 4, 1);
+        
+        // Add to simulation
+        this.components = [];
+        this.powerSources = [];
+        [battery1, battery2, switch1, switch2, wire1, wire2, xorGate, led].forEach(comp => {
+            this.addComponent(comp);
+        });
+        
+        return [battery1, battery2, switch1, switch2, wire1, wire2, xorGate, led];
+    }
+    
+    // Create a full adder circuit
+    createFullAdder() {
+        this.grid.clear();
+        
+        // Full adder: A, B, Cin inputs -> Sum, Cout outputs
+        // Using XOR, AND, OR gates
+        const batteryA = ComponentFactory.create('battery', 0, 0);
+        const batteryB = ComponentFactory.create('battery', 0, 20);
+        const batteryCin = ComponentFactory.create('battery', 0, 40);
+        
+        const switchA = ComponentFactory.create('switch', 20, 0);
+        const switchB = ComponentFactory.create('switch', 20, 20);
+        const switchCin = ComponentFactory.create('switch', 20, 40);
+        
+        // First XOR for A ⊕ B
+        const xor1 = ComponentFactory.create('xor-gate', 60, 10);
+        // Second XOR for (A ⊕ B) ⊕ Cin = Sum
+        const xor2 = ComponentFactory.create('xor-gate', 100, 20);
+        
+        // AND gates for carry logic
+        const and1 = ComponentFactory.create('and-gate', 60, 30);  // A & B
+        const and2 = ComponentFactory.create('and-gate', 100, 40); // (A ⊕ B) & Cin
+        
+        // OR gate for final carry
+        const or1 = ComponentFactory.create('or-gate', 140, 35);
+        
+        // Output LEDs
+        const sumLED = ComponentFactory.create('led', 140, 20);    // Sum output
+        const carryLED = ComponentFactory.create('led', 180, 35);  // Carry output
+        
+        // Place components
+        this.grid.placeComponent(batteryA, 0, 0);
+        this.grid.placeComponent(batteryB, 0, 1);
+        this.grid.placeComponent(batteryCin, 0, 2);
+        this.grid.placeComponent(switchA, 1, 0);
+        this.grid.placeComponent(switchB, 1, 1);
+        this.grid.placeComponent(switchCin, 1, 2);
+        this.grid.placeComponent(xor1, 3, 0);
+        this.grid.placeComponent(xor2, 5, 1);
+        this.grid.placeComponent(and1, 3, 1);
+        this.grid.placeComponent(and2, 5, 2);
+        this.grid.placeComponent(or1, 7, 1);
+        this.grid.placeComponent(sumLED, 7, 1);
+        this.grid.placeComponent(carryLED, 9, 1);
+        
+        // Add to simulation
+        this.components = [];
+        this.powerSources = [];
+        [batteryA, batteryB, batteryCin, switchA, switchB, switchCin, 
+         xor1, xor2, and1, and2, or1, sumLED, carryLED].forEach(comp => {
+            this.addComponent(comp);
+        });
+        
+        return [batteryA, batteryB, batteryCin, switchA, switchB, switchCin, 
+                xor1, xor2, and1, and2, or1, sumLED, carryLED];
+    }
+    
+    // Create SR flip-flop circuit
+    createSRFlipFlop() {
+        this.grid.clear();
+        
+        // SR flip-flop using NOR gates
+        const batteryS = ComponentFactory.create('battery', 0, 0);
+        const batteryR = ComponentFactory.create('battery', 0, 40);
+        
+        const switchS = ComponentFactory.create('switch', 20, 0);   // Set input
+        const switchR = ComponentFactory.create('switch', 20, 40);  // Reset input
+        
+        // NOR gates (cross-coupled)
+        const nor1 = ComponentFactory.create('nor-gate', 60, 10);   // Q output
+        const nor2 = ComponentFactory.create('nor-gate', 60, 30);   // Q' output
+        
+        // Output LEDs
+        const qLED = ComponentFactory.create('led', 100, 10);       // Q output
+        const qNotLED = ComponentFactory.create('led', 100, 30);    // Q' output
+        
+        // Place components
+        this.grid.placeComponent(batteryS, 0, 0);
+        this.grid.placeComponent(batteryR, 0, 2);
+        this.grid.placeComponent(switchS, 1, 0);
+        this.grid.placeComponent(switchR, 1, 2);
+        this.grid.placeComponent(nor1, 3, 0);
+        this.grid.placeComponent(nor2, 3, 1);
+        this.grid.placeComponent(qLED, 5, 0);
+        this.grid.placeComponent(qNotLED, 5, 1);
+        
+        // Add to simulation
+        this.components = [];
+        this.powerSources = [];
+        [batteryS, batteryR, switchS, switchR, nor1, nor2, qLED, qNotLED].forEach(comp => {
+            this.addComponent(comp);
+        });
+        
+        return [batteryS, batteryR, switchS, switchR, nor1, nor2, qLED, qNotLED];
+    }
+    
+    // Create a 4-bit counter circuit
+    createCounter() {
+        this.grid.clear();
+        
+        // Simple 4-bit counter using flip-flops (simplified representation)
+        const clock = ComponentFactory.create('battery', 0, 20);
+        const clockSwitch = ComponentFactory.create('switch', 20, 20);
+        
+        // 4 flip-flops (represented as toggle switches for simplicity)
+        const ff1 = ComponentFactory.create('switch', 60, 0);   // Bit 0 (LSB)
+        const ff2 = ComponentFactory.create('switch', 60, 20);  // Bit 1
+        const ff3 = ComponentFactory.create('switch', 60, 40);  // Bit 2
+        const ff4 = ComponentFactory.create('switch', 60, 60);  // Bit 3 (MSB)
+        
+        // Output LEDs for each bit
+        const led1 = ComponentFactory.create('led', 80, 0);
+        const led2 = ComponentFactory.create('led', 80, 20);
+        const led3 = ComponentFactory.create('led', 80, 40);
+        const led4 = ComponentFactory.create('led', 80, 60);
+        
+        // Logic gates for counter operation
+        const and1 = ComponentFactory.create('and-gate', 100, 10);
+        const and2 = ComponentFactory.create('and-gate', 100, 30);
+        const and3 = ComponentFactory.create('and-gate', 100, 50);
+        
+        // Place components
+        this.grid.placeComponent(clock, 0, 1);
+        this.grid.placeComponent(clockSwitch, 1, 1);
+        this.grid.placeComponent(ff1, 3, 0);
+        this.grid.placeComponent(ff2, 3, 1);
+        this.grid.placeComponent(ff3, 3, 2);
+        this.grid.placeComponent(ff4, 3, 3);
+        this.grid.placeComponent(led1, 4, 0);
+        this.grid.placeComponent(led2, 4, 1);
+        this.grid.placeComponent(led3, 4, 2);
+        this.grid.placeComponent(led4, 4, 3);
+        this.grid.placeComponent(and1, 5, 0);
+        this.grid.placeComponent(and2, 5, 1);
+        this.grid.placeComponent(and3, 5, 2);
+        
+        // Add to simulation
+        this.components = [];
+        this.powerSources = [];
+        [clock, clockSwitch, ff1, ff2, ff3, ff4, led1, led2, led3, led4, and1, and2, and3].forEach(comp => {
+            this.addComponent(comp);
+        });
+        
+        // Auto-increment counter for demonstration
+        let count = 0;
+        setInterval(() => {
+            count = (count + 1) % 16; // 4-bit counter (0-15)
+            
+            // Update switch states to represent binary count
+            ff1.closed = (count & 1) === 1;
+            ff2.closed = (count & 2) === 2;
+            ff3.closed = (count & 4) === 4;
+            ff4.closed = (count & 8) === 8;
+        }, 2000);
+        
+        return [clock, clockSwitch, ff1, ff2, ff3, ff4, led1, led2, led3, led4, and1, and2, and3];
     }
     
     // Get circuit statistics

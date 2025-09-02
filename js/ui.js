@@ -14,6 +14,15 @@ class UIManager {
         this.mousePos = { x: 0, y: 0 };
         this.ghostComponent = null;
         
+        // Zoom state
+        this.zoom = 1.0;
+        this.minZoom = 0.25;
+        this.maxZoom = 4.0;
+        this.zoomStep = 0.1;
+        this.panOffset = { x: 0, y: 0 };
+        this.isPanning = false;
+        this.lastPanPos = { x: 0, y: 0 };
+        
         // UI elements
         this.toolbar = document.querySelector('.toolbar');
         this.statusBar = document.querySelector('.status');
@@ -22,6 +31,8 @@ class UIManager {
         this.setupEventListeners();
         this.setupDragAndDrop();
         this.setupButtons();
+        this.addZoomControls();
+        this.addAudioControls();
     }
     
     // Setup all event listeners
@@ -30,6 +41,9 @@ class UIManager {
         this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
         this.canvas.addEventListener('mousemove', (e) => this.handleCanvasMouseMove(e));
         this.canvas.addEventListener('contextmenu', (e) => this.handleCanvasRightClick(e));
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         
         // Window events
         window.addEventListener('resize', () => this.handleResize());
@@ -56,6 +70,13 @@ class UIManager {
     
     // Setup button functionality
     setupButtons() {
+        // Add click sound to all buttons
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                window.audioManager.playClick();
+            });
+        });
+        
         // Clear button
         document.getElementById('clearBtn').addEventListener('click', () => {
             this.clearCircuit();
@@ -94,6 +115,22 @@ class UIManager {
         document.getElementById('loadBasicAND').addEventListener('click', () => {
             this.loadStarterCircuit('basicAND');
         });
+        
+        document.getElementById('loadXORDemo').addEventListener('click', () => {
+            this.loadStarterCircuit('xorDemo');
+        });
+        
+        document.getElementById('loadFullAdder').addEventListener('click', () => {
+            this.loadStarterCircuit('fullAdder');
+        });
+        
+        document.getElementById('loadSRFlipFlop').addEventListener('click', () => {
+            this.loadStarterCircuit('srFlipFlop');
+        });
+        
+        document.getElementById('loadCounter').addEventListener('click', () => {
+            this.loadStarterCircuit('counter');
+        });
     }
     
     // Handle drag start from component palette
@@ -113,11 +150,14 @@ class UIManager {
         e.dataTransfer.dropEffect = 'copy';
         
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        
+        // Convert screen coordinates to world coordinates for proper zoom/pan handling
+        const worldPos = this.screenToWorld(screenX, screenY);
         
         // Show ghost component
-        this.showGhostComponent(x, y, e.dataTransfer.getData('text/plain'));
+        this.showGhostComponent(worldPos.x, worldPos.y, e.dataTransfer.getData('text/plain'));
     }
     
     // Handle drag enter canvas
@@ -140,10 +180,13 @@ class UIManager {
         
         const componentType = e.dataTransfer.getData('text/plain');
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
         
-        this.placeComponent(componentType, x, y);
+        // Convert screen coordinates to world coordinates for proper zoom/pan handling
+        const worldPos = this.screenToWorld(screenX, screenY);
+        
+        this.placeComponent(componentType, worldPos.x, worldPos.y);
         this.hideGhostComponent();
     }
     
@@ -176,6 +219,7 @@ class UIManager {
         
         // Check if position is valid
         if (!this.grid.isEmpty(gridCoord.x, gridCoord.y)) {
+            window.audioManager.playError();
             this.showMessage('Cannot place component here', 'error');
             return false;
         }
@@ -183,6 +227,7 @@ class UIManager {
         // Create component
         const component = ComponentFactory.create(type, gridPos.x, gridPos.y);
         if (!component) {
+            window.audioManager.playError();
             this.showMessage('Failed to create component', 'error');
             return false;
         }
@@ -191,8 +236,10 @@ class UIManager {
         if (this.grid.placeComponent(component, gridCoord.x, gridCoord.y)) {
             this.simulator.addComponent(component);
             this.updateStatus(`Placed ${type} at (${gridCoord.x}, ${gridCoord.y})`);
+            window.audioManager.playPlaceComponent();
             return true;
         } else {
+            window.audioManager.playError();
             this.showMessage('Failed to place component', 'error');
             return false;
         }
@@ -201,8 +248,25 @@ class UIManager {
     // Handle canvas click
     handleCanvasClick(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        
+        // Handle panning
+        if (this.isPanning) {
+            const deltaX = e.clientX - this.lastPanPos.x;
+            const deltaY = e.clientY - this.lastPanPos.y;
+            
+            this.panOffset.x += deltaX;
+            this.panOffset.y += deltaY;
+            
+            this.lastPanPos = { x: e.clientX, y: e.clientY };
+            return;
+        }
+        
+        // Convert screen coordinates to world coordinates
+        const worldPos = this.screenToWorld(screenX, screenY);
+        const x = worldPos.x;
+        const y = worldPos.y;
         
         const component = this.grid.getComponentAtPixel(x, y);
         
@@ -212,6 +276,7 @@ class UIManager {
             // Handle component-specific interactions
             if (component.type === 'switch') {
                 component.toggle();
+                window.audioManager.playSwitch();
                 this.updateStatus(`Switch ${component.closed ? 'closed' : 'opened'}`);
             }
         } else {
@@ -222,10 +287,27 @@ class UIManager {
     // Handle canvas mouse move
     handleCanvasMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
         
-        this.mousePos = { x, y };
+        // Handle panning
+        if (this.isPanning) {
+            const deltaX = e.clientX - this.lastPanPos.x;
+            const deltaY = e.clientY - this.lastPanPos.y;
+            
+            this.panOffset.x += deltaX;
+            this.panOffset.y += deltaY;
+            
+            this.lastPanPos = { x: e.clientX, y: e.clientY };
+            return;
+        }
+        
+        // Convert screen coordinates to world coordinates
+        const worldPos = this.screenToWorld(screenX, screenY);
+        const x = worldPos.x;
+        const y = worldPos.y;
+        
+        this.mousePos = { x: screenX, y: screenY };
         
         // Update coordinates display
         const gridPos = this.grid.pixelToGrid(x, y);
@@ -321,13 +403,16 @@ class UIManager {
             case 'Backspace':
                 if (this.selectedComponent) {
                     this.deleteComponent(this.selectedComponent);
+                    window.audioManager.playClick();
                 }
                 break;
             case 'Escape':
                 this.selectComponent(null);
+                window.audioManager.playClick();
                 break;
             case 'c':
                 if (e.ctrlKey) {
+                    e.preventDefault();
                     this.clearCircuit();
                 }
                 break;
@@ -343,6 +428,434 @@ class UIManager {
                     this.showLoadDialog();
                 }
                 break;
+            case 'e':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.exportCircuit();
+                    window.audioManager.playClick();
+                }
+                break;
+            case 'i':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    document.getElementById('importFile').click();
+                    window.audioManager.playClick();
+                }
+                break;
+            case 'm':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const enabled = window.audioManager.toggle();
+                    const btn = document.getElementById('audioToggleBtn');
+                    if (btn) {
+                        btn.textContent = enabled ? '🔊' : '🔇';
+                        btn.classList.toggle('muted', !enabled);
+                    }
+                    this.showMessage(`Audio ${enabled ? 'enabled' : 'disabled'}`, 'info');
+                }
+                break;
+            case 'h':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.showHelpDialog();
+                }
+                break;
+            case 'g':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.toggleGrid();
+                }
+                break;
+            case 'Tab':
+                e.preventDefault();
+                this.selectNextComponent();
+                break;
+            case 'Enter':
+            case ' ':
+                if (this.selectedComponent && this.selectedComponent.type === 'switch') {
+                    e.preventDefault();
+                    this.selectedComponent.toggle();
+                    window.audioManager.playSwitch();
+                    this.updateStatus(`Switch ${this.selectedComponent.closed ? 'closed' : 'opened'}`);
+                }
+                break;
+            case '=':
+            case '+':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.zoomIn();
+                }
+                break;
+            case '-':
+            case '_':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.zoomOut();
+                }
+                break;
+            case '0':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    this.resetZoom();
+                }
+                break;
+            case 'ArrowUp':
+            case 'ArrowDown':
+            case 'ArrowLeft':
+            case 'ArrowRight':
+                if (this.selectedComponent) {
+                    e.preventDefault();
+                    this.moveSelectedComponent(e.key);
+                }
+                break;
+            // Number keys for quick component selection
+            case '1':
+                if (!e.ctrlKey) this.quickSelectComponent('battery');
+                break;
+            case '2':
+                if (!e.ctrlKey) this.quickSelectComponent('led');
+                break;
+            case '3':
+                if (!e.ctrlKey) this.quickSelectComponent('resistor');
+                break;
+            case '4':
+                if (!e.ctrlKey) this.quickSelectComponent('switch');
+                break;
+            case '5':
+                if (!e.ctrlKey) this.quickSelectComponent('wire');
+                break;
+            case '6':
+                if (!e.ctrlKey) this.quickSelectComponent('and-gate');
+                break;
+            case '7':
+                if (!e.ctrlKey) this.quickSelectComponent('or-gate');
+                break;
+            case '8':
+                if (!e.ctrlKey) this.quickSelectComponent('not-gate');
+                break;
+            case '9':
+                if (!e.ctrlKey) this.quickSelectComponent('xor-gate');
+                break;
+        }
+    }
+    
+    // Show help dialog with keyboard shortcuts
+    showHelpDialog() {
+        const helpDialog = document.createElement('div');
+        helpDialog.style.position = 'fixed';
+        helpDialog.style.top = '50%';
+        helpDialog.style.left = '50%';
+        helpDialog.style.transform = 'translate(-50%, -50%)';
+        helpDialog.style.background = '#16213e';
+        helpDialog.style.border = '3px solid #533a7b';
+        helpDialog.style.padding = '20px';
+        helpDialog.style.zIndex = '10000';
+        helpDialog.style.fontFamily = 'Press Start 2P, monospace';
+        helpDialog.style.fontSize = '8px';
+        helpDialog.style.color = '#eee';
+        helpDialog.style.maxWidth = '600px';
+        helpDialog.style.maxHeight = '80vh';
+        helpDialog.style.overflow = 'auto';
+        
+        helpDialog.innerHTML = `
+            <h3 style="margin-bottom: 15px; color: #4cc9f0;">Keyboard Shortcuts</h3>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 15px;">
+                <strong style="color: #4cc9f0;">File Operations:</strong><span></span>
+                <span>Ctrl + S</span><span>Save circuit</span>
+                <span>Ctrl + O</span><span>Load circuit</span>
+                <span>Ctrl + E</span><span>Export circuit</span>
+                <span>Ctrl + I</span><span>Import circuit</span>
+                <span>Ctrl + C</span><span>Clear circuit</span>
+                
+                <strong style="color: #4cc9f0;">Navigation:</strong><span></span>
+                <span>Ctrl + +</span><span>Zoom in</span>
+                <span>Ctrl + -</span><span>Zoom out</span>
+                <span>Ctrl + 0</span><span>Reset zoom</span>
+                <span>Mouse wheel</span><span>Zoom at cursor</span>
+                <span>Middle mouse</span><span>Pan canvas</span>
+                
+                <strong style="color: #4cc9f0;">Components:</strong><span></span>
+                <span>Delete/Backspace</span><span>Delete selected</span>
+                <span>Tab</span><span>Select next component</span>
+                <span>Arrow keys</span><span>Move selected component</span>
+                <span>Enter/Space</span><span>Toggle switch</span>
+                <span>Escape</span><span>Deselect component</span>
+                
+                <strong style="color: #4cc9f0;">Quick Select:</strong><span></span>
+                <span>1</span><span>Battery</span>
+                <span>2</span><span>LED</span>
+                <span>3</span><span>Resistor</span>
+                <span>4</span><span>Switch</span>
+                <span>5</span><span>Wire</span>
+                <span>6</span><span>AND Gate</span>
+                <span>7</span><span>OR Gate</span>
+                <span>8</span><span>NOT Gate</span>
+                <span>9</span><span>XOR Gate</span>
+                
+                <strong style="color: #4cc9f0;">Other:</strong><span></span>
+                <span>Ctrl + M</span><span>Toggle audio</span>
+                <span>Ctrl + G</span><span>Toggle grid</span>
+                <span>Ctrl + H</span><span>Show this help</span>
+            </div>
+            <button id="closeHelp" style="background: #4cc9f0; color: #fff; border: none; padding: 10px 20px; cursor: pointer; font-family: 'Press Start 2P', monospace; font-size: 8px;">Close</button>
+        `;
+        
+        document.body.appendChild(helpDialog);
+        
+        // Close help dialog
+        document.getElementById('closeHelp').onclick = () => {
+            document.body.removeChild(helpDialog);
+        };
+        
+        // Close on escape
+        const closeOnEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(helpDialog);
+                document.removeEventListener('keydown', closeOnEscape);
+            }
+        };
+        
+        document.addEventListener('keydown', closeOnEscape);
+    }
+    
+    // Toggle grid visibility
+    toggleGrid() {
+        // This would need to be implemented in the grid class
+        this.showMessage('Grid toggle not implemented yet', 'info');
+    }
+    
+    // Select next component (for tab navigation)
+    selectNextComponent() {
+        if (this.simulator.components.length === 0) return;
+        
+        let currentIndex = this.simulator.components.indexOf(this.selectedComponent);
+        currentIndex = (currentIndex + 1) % this.simulator.components.length;
+        
+        this.selectComponent(this.simulator.components[currentIndex]);
+        window.audioManager.playClick();
+    }
+    
+    // Move selected component with arrow keys
+    moveSelectedComponent(direction) {
+        if (!this.selectedComponent) return;
+        
+        const gridCoord = this.grid.pixelToGrid(this.selectedComponent.x, this.selectedComponent.y);
+        let newX = gridCoord.x;
+        let newY = gridCoord.y;
+        
+        switch (direction) {
+            case 'ArrowUp': newY--; break;
+            case 'ArrowDown': newY++; break;
+            case 'ArrowLeft': newX--; break;
+            case 'ArrowRight': newX++; break;
+        }
+        
+        // Check if new position is valid
+        if (newX >= 0 && newX < this.grid.cols && newY >= 0 && newY < this.grid.rows) {
+            if (this.grid.isEmpty(newX, newY)) {
+                // Remove from old position
+                this.grid.removeComponent(gridCoord.x, gridCoord.y);
+                
+                // Update component position
+                const newPixelPos = this.grid.gridToPixel(newX, newY);
+                this.selectedComponent.x = newPixelPos.x;
+                this.selectedComponent.y = newPixelPos.y;
+                
+                // Place in new position
+                this.grid.placeComponent(this.selectedComponent, newX, newY);
+                
+                this.updateStatus(`Moved ${this.selectedComponent.type} to (${newX}, ${newY})`);
+                window.audioManager.playClick();
+            } else {
+                window.audioManager.playError();
+                this.showMessage('Cannot move to occupied cell', 'error');
+            }
+        } else {
+            window.audioManager.playError();
+            this.showMessage('Cannot move outside grid', 'error');
+        }
+    }
+    
+    // Quick select component type (for number key shortcuts)
+    quickSelectComponent(type) {
+        // Set ghost component for placement
+        this.ghostComponent = {
+            type: type,
+            x: this.mousePos.x,
+            y: this.mousePos.y,
+            valid: true
+        };
+        
+        this.updateStatus(`Selected ${type} for placement (click to place)`);
+        window.audioManager.playClick();
+    }
+    
+    // Handle mouse wheel for zooming
+    handleWheel(e) {
+        e.preventDefault();
+        
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const deltaY = e.deltaY;
+        const zoomDirection = deltaY > 0 ? -1 : 1;
+        
+        this.zoomAt(mouseX, mouseY, zoomDirection);
+    }
+    
+    // Handle mouse down for panning
+    handleMouseDown(e) {
+        if (e.button === 1 || (e.button === 0 && e.ctrlKey)) { // Middle mouse or Ctrl+Left click
+            e.preventDefault();
+            this.isPanning = true;
+            this.lastPanPos = { x: e.clientX, y: e.clientY };
+            this.canvas.style.cursor = 'grabbing';
+        }
+    }
+    
+    // Handle mouse up for panning
+    handleMouseUp(e) {
+        if (this.isPanning) {
+            this.isPanning = false;
+            this.canvas.style.cursor = '';
+        }
+    }
+    
+    // Zoom in
+    zoomIn() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.zoomAt(centerX, centerY, 1);
+    }
+    
+    // Zoom out
+    zoomOut() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.zoomAt(centerX, centerY, -1);
+    }
+    
+    // Reset zoom to 100%
+    resetZoom() {
+        this.zoom = 1.0;
+        this.panOffset = { x: 0, y: 0 };
+        this.updateZoomDisplay();
+    }
+    
+    // Zoom at specific point
+    zoomAt(x, y, direction) {
+        const newZoom = this.zoom + (direction * this.zoomStep);
+        
+        if (newZoom < this.minZoom || newZoom > this.maxZoom) {
+            return;
+        }
+        
+        // Calculate zoom point in world coordinates
+        const worldX = (x - this.panOffset.x) / this.zoom;
+        const worldY = (y - this.panOffset.y) / this.zoom;
+        
+        // Update zoom
+        this.zoom = newZoom;
+        
+        // Adjust pan offset to keep zoom point in same screen position
+        this.panOffset.x = x - worldX * this.zoom;
+        this.panOffset.y = y - worldY * this.zoom;
+        
+        this.updateZoomDisplay();
+    }
+    
+    // Add zoom controls to UI
+    addZoomControls() {
+        // Check if zoom controls already exist in HTML
+        if (document.getElementById('zoomInBtn')) {
+            // Controls exist in HTML, just add event listeners
+            document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
+            document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
+            document.getElementById('resetZoomBtn').addEventListener('click', () => this.resetZoom());
+            return;
+        }
+        
+        // Create zoom controls dynamically if they don't exist
+        const controls = document.querySelector('.controls');
+        
+        // Create zoom controls container
+        const zoomControls = document.createElement('div');
+        zoomControls.className = 'zoom-controls';
+        zoomControls.innerHTML = `
+            <button id="zoomOutBtn" class="btn pixel-btn zoom-btn" title="Zoom Out (Ctrl + -)">-</button>
+            <span id="zoomDisplay" class="zoom-display">100%</span>
+            <button id="zoomInBtn" class="btn pixel-btn zoom-btn" title="Zoom In (Ctrl + +)">+</button>
+            <button id="resetZoomBtn" class="btn pixel-btn zoom-btn" title="Reset Zoom (Ctrl + 0)">⌂</button>
+        `;
+        
+        controls.appendChild(zoomControls);
+        
+        // Add event listeners
+        document.getElementById('zoomInBtn').addEventListener('click', () => this.zoomIn());
+        document.getElementById('zoomOutBtn').addEventListener('click', () => this.zoomOut());
+        document.getElementById('resetZoomBtn').addEventListener('click', () => this.resetZoom());
+    }
+    
+    // Update zoom display
+    updateZoomDisplay() {
+        const display = document.getElementById('zoomDisplay');
+        if (display) {
+            display.textContent = `${Math.round(this.zoom * 100)}%`;
+        }
+        
+        // Update coordinates to show zoom level
+        this.updateCoordinates();
+    }
+    
+    // Transform canvas context for zoom and pan
+    transformCanvas() {
+        this.ctx.save();
+        this.ctx.translate(this.panOffset.x, this.panOffset.y);
+        this.ctx.scale(this.zoom, this.zoom);
+    }
+    
+    // Restore canvas transform
+    restoreCanvas() {
+        this.ctx.restore();
+    }
+    
+    // Convert screen coordinates to world coordinates
+    screenToWorld(screenX, screenY) {
+        return {
+            x: (screenX - this.panOffset.x) / this.zoom,
+            y: (screenY - this.panOffset.y) / this.zoom
+        };
+    }
+    
+    // Convert world coordinates to screen coordinates
+    worldToScreen(worldX, worldY) {
+        return {
+            x: worldX * this.zoom + this.panOffset.x,
+            y: worldY * this.zoom + this.panOffset.y
+        };
+    }
+    
+    // Add audio controls to UI
+    addAudioControls() {
+        // Audio controls are already in HTML, just need to wire up events
+        const audioToggleBtn = document.getElementById('audioToggleBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        
+        if (audioToggleBtn) {
+            audioToggleBtn.addEventListener('click', () => {
+                const enabled = window.audioManager.toggle();
+                audioToggleBtn.textContent = enabled ? '🔊' : '🔇';
+                audioToggleBtn.classList.toggle('muted', !enabled);
+                audioToggleBtn.title = enabled ? 'Turn Sound Off' : 'Turn Sound On';
+            });
+        }
+        
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', (e) => {
+                const volume = e.target.value / 100;
+                window.audioManager.setVolume(volume);
+            });
         }
     }
     
@@ -365,6 +878,7 @@ class UIManager {
             this.simulator.powerSources = [];
             this.selectedComponent = null;
             this.updateStatus('Circuit cleared');
+            window.audioManager.playClear();
         }
     }
     
@@ -432,10 +946,32 @@ class UIManager {
             case 'blinkingLED':
                 this.simulator.createBlinkingLED();
                 this.showMessage('Blinking LED circuit loaded', 'success');
+                window.audioManager.playSuccess();
                 break;
             case 'basicAND':
                 this.simulator.createBasicANDGate();
                 this.showMessage('Basic AND gate circuit loaded', 'success');
+                window.audioManager.playSuccess();
+                break;
+            case 'xorDemo':
+                this.simulator.createXORDemo();
+                this.showMessage('XOR gate demonstration loaded', 'success');
+                window.audioManager.playSuccess();
+                break;
+            case 'fullAdder':
+                this.simulator.createFullAdder();
+                this.showMessage('Full adder circuit loaded', 'success');
+                window.audioManager.playSuccess();
+                break;
+            case 'srFlipFlop':
+                this.simulator.createSRFlipFlop();
+                this.showMessage('SR flip-flop circuit loaded', 'success');
+                window.audioManager.playSuccess();
+                break;
+            case 'counter':
+                this.simulator.createCounter();
+                this.showMessage('4-bit counter circuit loaded', 'success');
+                window.audioManager.playSuccess();
                 break;
         }
     }
@@ -450,7 +986,11 @@ class UIManager {
     // Update coordinates display
     updateCoordinates(gridX, gridY) {
         if (this.coordinatesDisplay) {
-            this.coordinatesDisplay.textContent = `Grid: (${gridX}, ${gridY})`;
+            if (gridX !== undefined && gridY !== undefined) {
+                this.coordinatesDisplay.textContent = `Grid: (${gridX}, ${gridY}) | Zoom: ${Math.round(this.zoom * 100)}%`;
+            } else {
+                this.coordinatesDisplay.textContent = `Zoom: ${Math.round(this.zoom * 100)}%`;
+            }
         }
     }
     
@@ -491,6 +1031,9 @@ class UIManager {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Apply zoom and pan transforms
+        this.transformCanvas();
+        
         // Draw grid
         this.grid.drawGrid();
         
@@ -506,10 +1049,13 @@ class UIManager {
             // Highlight selected component
             if (component === this.selectedComponent) {
                 this.ctx.strokeStyle = '#4cc9f0';
-                this.ctx.lineWidth = 2;
+                this.ctx.lineWidth = 2 / this.zoom; // Adjust line width for zoom
                 this.ctx.strokeRect(component.x - 2, component.y - 2, component.width + 4, component.height + 4);
             }
         });
+        
+        // Restore transform
+        this.restoreCanvas();
     }
     
     // Draw ghost component

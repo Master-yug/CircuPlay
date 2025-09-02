@@ -64,11 +64,30 @@ class Grid {
         return this.grid[gridY][gridX] === null;
     }
     
-    // Place component on grid
+    // Check if area is empty for multi-cell components
+    isAreaEmpty(gridX, gridY, width, height) {
+        for (let y = gridY; y < gridY + height; y++) {
+            for (let x = gridX; x < gridX + width; x++) {
+                if (!this.isEmpty(x, y)) return false;
+            }
+        }
+        return true;
+    }
+    
+    // Place component on grid (handles multi-cell components)
     placeComponent(component, gridX, gridY) {
-        if (!this.isEmpty(gridX, gridY)) return false;
+        const width = component.gridWidth || 1;
+        const height = component.gridHeight || 1;
         
-        this.grid[gridY][gridX] = component;
+        if (!this.isAreaEmpty(gridX, gridY, width, height)) return false;
+        
+        // Place component in all required grid cells
+        for (let y = gridY; y < gridY + height; y++) {
+            for (let x = gridX; x < gridX + width; x++) {
+                this.grid[y][x] = component;
+            }
+        }
+        
         component.gridX = gridX;
         component.gridY = gridY;
         component.x = gridX * this.gridSize;
@@ -77,12 +96,24 @@ class Grid {
         return true;
     }
     
-    // Remove component from grid
+    // Remove component from grid (handles multi-cell components)
     removeComponent(gridX, gridY) {
         if (!this.isValidPosition(gridX, gridY)) return null;
         
         const component = this.grid[gridY][gridX];
-        this.grid[gridY][gridX] = null;
+        if (!component) return null;
+        
+        const width = component.gridWidth || 1;
+        const height = component.gridHeight || 1;
+        
+        // Remove component from all grid cells it occupies
+        for (let y = component.gridY; y < component.gridY + height; y++) {
+            for (let x = component.gridX; x < component.gridX + width; x++) {
+                if (this.isValidPosition(x, y)) {
+                    this.grid[y][x] = null;
+                }
+            }
+        }
         
         return component;
     }

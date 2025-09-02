@@ -158,6 +158,102 @@
     border: 1px solid #666;
 }
 
+/* XOR Gate Icon */
+.xor-gate-icon {
+    background: #666;
+    border: 1px solid #666;
+    border-radius: 0 70% 70% 0;
+    position: relative;
+}
+
+.xor-gate-icon::before {
+    content: 'X';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    color: #4cc9f0;
+    font-weight: bold;
+}
+
+.xor-gate-icon::after {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #4cc9f0;
+    border-radius: 0 50% 50% 0;
+}
+
+/* NAND Gate Icon */
+.nand-gate-icon {
+    background: linear-gradient(90deg,
+        #666 0%, #666 60%,
+        transparent 60%, transparent 100%);
+    border: 1px solid #666;
+    border-radius: 0 50% 50% 0;
+    position: relative;
+}
+
+.nand-gate-icon::before {
+    content: '&';
+    position: absolute;
+    top: 50%;
+    left: 40%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    color: #4cc9f0;
+    font-weight: bold;
+}
+
+.nand-gate-icon::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #4cc9f0;
+    border: 1px solid #666;
+}
+
+/* NOR Gate Icon */
+.nor-gate-icon {
+    background: #666;
+    border: 1px solid #666;
+    border-radius: 0 70% 70% 0;
+    position: relative;
+}
+
+.nor-gate-icon::before {
+    content: '|';
+    position: absolute;
+    top: 50%;
+    left: 40%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    color: #4cc9f0;
+    font-weight: bold;
+}
+
+.nor-gate-icon::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #4cc9f0;
+    border: 1px solid #666;
+}
+
 /* Component States on Canvas */
 .component-on-canvas {
     position: absolute;

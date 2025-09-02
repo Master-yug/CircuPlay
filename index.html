@@ -19,6 +19,16 @@
                 <button id="exportBtn" class="btn pixel-btn">Export</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;">
                 <button id="importBtn" class="btn pixel-btn">Import</button>
+                <div class="zoom-controls">
+                    <button id="zoomOutBtn" class="btn pixel-btn zoom-btn" title="Zoom Out (Ctrl + -)">-</button>
+                    <span id="zoomDisplay" class="zoom-display">100%</span>
+                    <button id="zoomInBtn" class="btn pixel-btn zoom-btn" title="Zoom In (Ctrl + +)">+</button>
+                    <button id="resetZoomBtn" class="btn pixel-btn zoom-btn" title="Reset Zoom (Ctrl + 0)">⌂</button>
+                </div>
+                <div class="audio-controls">
+                    <button id="audioToggleBtn" class="btn pixel-btn audio-btn" title="Toggle Sound Effects">🔊</button>
+                    <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="30" title="Volume">
+                </div>
             </div>
         </header>
 
@@ -60,6 +70,18 @@
                         <div class="component-icon not-gate-icon"></div>
                         <span>NOT Gate</span>
                     </div>
+                    <div class="component-item" data-type="xor-gate" draggable="true">
+                        <div class="component-icon xor-gate-icon"></div>
+                        <span>XOR Gate</span>
+                    </div>
+                    <div class="component-item" data-type="nand-gate" draggable="true">
+                        <div class="component-icon nand-gate-icon"></div>
+                        <span>NAND Gate</span>
+                    </div>
+                    <div class="component-item" data-type="nor-gate" draggable="true">
+                        <div class="component-icon nor-gate-icon"></div>
+                        <span>NOR Gate</span>
+                    </div>
                 </div>
                 
                 <!-- Starter Circuits -->
@@ -67,6 +89,10 @@
                     <h3>Starter Circuits</h3>
                     <button class="btn pixel-btn" id="loadBlinkingLED">Blinking LED</button>
                     <button class="btn pixel-btn" id="loadBasicAND">Basic AND Gate</button>
+                    <button class="btn pixel-btn" id="loadXORDemo">XOR Demo</button>
+                    <button class="btn pixel-btn" id="loadFullAdder">Full Adder</button>
+                    <button class="btn pixel-btn" id="loadSRFlipFlop">SR Flip-Flop</button>
+                    <button class="btn pixel-btn" id="loadCounter">4-bit Counter</button>
                 </div>
             </aside>
 
@@ -85,6 +111,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="js/audio.js"></script>
     <script src="js/grid.js"></script>
     <script src="js/components.js"></script>
     <script src="js/simulation.js"></script>

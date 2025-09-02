@@ -73,26 +73,37 @@ class Battery extends Component {
     }
     
     draw(ctx) {
-        // Draw battery body
-        ctx.fillStyle = this.powered ? '#4cc9f0' : '#333';
+        // Draw battery body with PCB-style appearance
+        ctx.fillStyle = this.powered ? '#1a4d1a' : '#0d2d0d';
         ctx.fillRect(this.x + 2, this.y + 6, 14, 8);
         
-        // Draw battery terminals
-        ctx.fillStyle = this.powered ? '#4cc9f0' : '#666';
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x + 2, this.y + 6, 14, 8);
+        
+        // Draw copper terminals
+        ctx.fillStyle = '#cd7f32'; // Copper color
         ctx.fillRect(this.x, this.y + 8, 2, 4); // Negative terminal
         ctx.fillRect(this.x + 18, this.y + 8, 2, 4); // Positive terminal
         
         // Draw plus/minus symbols
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = '#ffffff';
         ctx.font = '8px monospace';
         ctx.fillText('+', this.x + 14, this.y + 12);
         ctx.fillText('-', this.x + 4, this.y + 12);
         
-        // Power indicator
+        // Power indicator with green LED style
         if (this.powered) {
-            ctx.strokeStyle = '#4cc9f0';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
             ctx.strokeRect(this.x - 1, this.y - 1, this.width + 2, this.height + 2);
+            
+            // Add power LED indicator
+            ctx.fillStyle = '#00ff41';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width - 3, this.y + 3, 2, 0, 2 * Math.PI);
+            ctx.fill();
         }
     }
     
@@ -111,40 +122,53 @@ class LED extends Component {
     }
     
     draw(ctx) {
-        // Draw LED body
-        ctx.fillStyle = this.powered ? this.color : '#333';
+        // Draw LED body with PCB component style
+        ctx.fillStyle = this.powered ? this.color : '#2a3429';
         ctx.beginPath();
-        ctx.arc(this.x + 10, this.y + 10, 8, 0, 2 * Math.PI);
+        ctx.arc(this.x + 10, this.y + 10, 7, 0, 2 * Math.PI);
         ctx.fill();
         
-        // Draw LED legs
-        ctx.fillStyle = '#666';
-        ctx.fillRect(this.x + 8, this.y + 18, 1, 2);
-        ctx.fillRect(this.x + 11, this.y + 18, 1, 2);
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(this.x + 10, this.y + 10, 7, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw copper pads/legs
+        ctx.fillStyle = '#cd7f32'; // Copper color
+        ctx.fillRect(this.x + 8, this.y + 18, 2, 2);
+        ctx.fillRect(this.x + 10, this.y + 18, 2, 2);
         
         // Glow effect when powered
         if (this.powered) {
-            this.glowRadius = Math.min(this.glowRadius + 0.5, 12);
+            this.glowRadius = Math.min(this.glowRadius + 0.5, 15);
             
             // Create radial gradient for glow
             const gradient = ctx.createRadialGradient(
                 this.x + 10, this.y + 10, 0,
                 this.x + 10, this.y + 10, this.glowRadius
             );
-            gradient.addColorStop(0, this.color + '80');
+            gradient.addColorStop(0, this.color + '60');
             gradient.addColorStop(1, this.color + '00');
             
             ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.arc(this.x + 10, this.y + 10, this.glowRadius, 0, 2 * Math.PI);
             ctx.fill();
+            
+            // Add bright center dot
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(this.x + 10, this.y + 10, 2, 0, 2 * Math.PI);
+            ctx.fill();
         } else {
             this.glowRadius = Math.max(this.glowRadius - 1, 0);
         }
         
-        // Highlight when powered
+        // Power indicator border
         if (this.powered) {
-            ctx.strokeStyle = this.color;
+            ctx.strokeStyle = '#00ff41';
             ctx.lineWidth = 2;
             ctx.strokeRect(this.x - 1, this.y - 1, this.width + 2, this.height + 2);
         }
@@ -192,33 +216,34 @@ class Switch extends Component {
     }
     
     draw(ctx) {
-        // Draw switch terminals
-        ctx.fillStyle = '#666';
-        ctx.fillRect(this.x + 2, this.y + 9, 4, 2);
-        ctx.fillRect(this.x + 14, this.y + 9, 4, 2);
+        // Draw PCB-style switch body
+        ctx.fillStyle = this.closed ? '#1a4d1a' : '#2a1a1a';
+        ctx.fillRect(this.x + 3, this.y + 7, 14, 6);
         
-        // Draw switch lever
-        ctx.strokeStyle = this.closed ? '#4cc9f0' : '#ff6b6b';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(this.x + 6, this.y + 10);
-        if (this.closed) {
-            ctx.lineTo(this.x + 14, this.y + 10);
-        } else {
-            ctx.lineTo(this.x + 14, this.y + 6);
-        }
-        ctx.stroke();
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x + 3, this.y + 7, 14, 6);
+        
+        // Draw copper terminals
+        ctx.fillStyle = '#cd7f32'; // Copper color
+        ctx.fillRect(this.x, this.y + 9, 3, 2);
+        ctx.fillRect(this.x + 17, this.y + 9, 3, 2);
+        
+        // Draw switch lever/actuator
+        ctx.fillStyle = this.closed ? '#00ff41' : '#ff4444';
+        ctx.fillRect(this.x + 8, this.y + 4, 4, 3);
         
         // Switch state indicator
-        ctx.fillStyle = this.closed ? '#4cc9f0' : '#ff6b6b';
+        ctx.fillStyle = this.closed ? '#00ff41' : '#ff4444';
         ctx.beginPath();
-        ctx.arc(this.x + 6, this.y + 10, 2, 0, 2 * Math.PI);
+        ctx.arc(this.x + 10, this.y + 15, 2, 0, 2 * Math.PI);
         ctx.fill();
         
-        // Power indicator
-        if (this.powered && this.closed) {
-            ctx.strokeStyle = '#4cc9f0';
-            ctx.lineWidth = 1;
+        // Power indicator when closed and powered
+        if (this.closed && this.powered) {
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
             ctx.strokeRect(this.x - 1, this.y - 1, this.width + 2, this.height + 2);
         }
     }
@@ -256,11 +281,11 @@ class Wire extends Component {
     }
     
     draw(ctx) {
-        // Draw wire
-        ctx.strokeStyle = this.powered ? '#4cc9f0' : '#666';
-        ctx.lineWidth = this.powered ? 3 : 2;
+        // Draw PCB trace-style wire
+        ctx.strokeStyle = this.powered ? '#00ff41' : '#cd7f32'; // Copper color when unpowered, green when powered
+        ctx.lineWidth = this.powered ? 4 : 3;
         
-        // Draw cross pattern for wire
+        // Draw cross pattern for wire (PCB trace style)
         ctx.beginPath();
         ctx.moveTo(this.x + 2, this.y + 10);
         ctx.lineTo(this.x + 18, this.y + 10);
@@ -268,15 +293,24 @@ class Wire extends Component {
         ctx.lineTo(this.x + 10, this.y + 18);
         ctx.stroke();
         
-        // Current flow animation
+        // Add PCB-style via point in center
+        ctx.fillStyle = this.powered ? '#00ff41' : '#b8860b'; // Darker copper
+        ctx.beginPath();
+        ctx.arc(this.x + 10, this.y + 10, 2, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Current flow animation for powered wires
         if (this.powered) {
-            ctx.fillStyle = '#4cc9f0';
-            const time = Date.now() * 0.005;
-            const sparkX = this.x + 10 + Math.sin(time) * 4;
-            const sparkY = this.y + 10 + Math.cos(time) * 4;
+            const time = Date.now() * 0.003;
+            const pulseAlpha = (Math.sin(time) + 1) * 0.3 + 0.2;
+            ctx.strokeStyle = `rgba(0, 255, 65, ${pulseAlpha})`;
+            ctx.lineWidth = 6;
             ctx.beginPath();
-            ctx.arc(sparkX, sparkY, 1, 0, 2 * Math.PI);
-            ctx.fill();
+            ctx.moveTo(this.x + 2, this.y + 10);
+            ctx.lineTo(this.x + 18, this.y + 10);
+            ctx.moveTo(this.x + 10, this.y + 2);
+            ctx.lineTo(this.x + 10, this.y + 18);
+            ctx.stroke();
         }
         
         // Connection points
@@ -291,6 +325,11 @@ class LogicGate extends Component {
         super(type, x, y);
         this.inputs = [];
         this.output = false;
+        // Make logic gates 2x1 size (40x20 pixels) for better wire connections
+        this.width = 20;
+        this.height = 40; // 2 grid cells tall
+        this.gridWidth = 1;  // 1 cell wide
+        this.gridHeight = 2; // 2 cells tall
     }
     
     addInput(value) {
@@ -308,23 +347,34 @@ class LogicGate extends Component {
     }
     
     draw(ctx) {
-        // Draw gate body
-        ctx.fillStyle = this.powered ? '#4cc9f0' : '#666';
-        ctx.fillRect(this.x + 2, this.y + 2, 16, 16);
+        // Draw gate body with PCB-style appearance
+        ctx.fillStyle = this.powered ? '#2a5234' : '#1a3024';
+        ctx.fillRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2);
         
-        // Draw input terminals
-        ctx.fillStyle = '#333';
-        ctx.fillRect(this.x, this.y + 6, 2, 2);
-        ctx.fillRect(this.x, this.y + 12, 2, 2);
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2);
         
-        // Draw output terminal
-        ctx.fillRect(this.x + 18, this.y + 9, 2, 2);
+        // Draw input terminals (copper pads) - positioned for 2-cell height
+        ctx.fillStyle = '#cd7f32'; // Copper color
+        ctx.fillRect(this.x - 1, this.y + 8, 3, 3);   // Top input (first grid cell)
+        ctx.fillRect(this.x - 1, this.y + 28, 3, 3);  // Bottom input (second grid cell)
         
-        // Power indicator
+        // Draw output terminal (copper pad)
+        ctx.fillRect(this.x + this.width - 2, this.y + 18, 3, 3); // Center output
+        
+        // Power indicator with circuit board style
         if (this.powered) {
-            ctx.strokeStyle = '#4cc9f0';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(this.x - 1, this.y - 1, this.width + 2, this.height + 2);
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+            
+            // Add power LED indicator
+            ctx.fillStyle = '#00ff41';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width - 4, this.y + 4, 2, 0, 2 * Math.PI);
+            ctx.fill();
         }
     }
 }
@@ -336,16 +386,20 @@ class ANDGate extends LogicGate {
     }
     
     calculate() {
-        return this.inputs.length > 0 && this.inputs.every(input => input);
+        // AND gate requires exactly 2 inputs to function properly
+        if (this.inputs.length < 2) return false;
+        return this.inputs[0] && this.inputs[1];
     }
     
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw AND symbol
-        ctx.fillStyle = '#fff';
-        ctx.font = '10px monospace';
-        ctx.fillText('&', this.x + 8, this.y + 12);
+        // Draw AND symbol with better positioning for 2x1 layout
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('&', this.x + this.width/2, this.y + this.height/2 + 4);
+        ctx.textAlign = 'left'; // Reset alignment
     }
 }
 
@@ -356,16 +410,20 @@ class ORGate extends LogicGate {
     }
     
     calculate() {
+        // OR gate requires at least 1 input, but works best with 2
+        if (this.inputs.length < 1) return false;
         return this.inputs.some(input => input);
     }
     
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw OR symbol
-        ctx.fillStyle = '#fff';
+        // Draw OR symbol with better positioning for 2x1 layout
+        ctx.fillStyle = '#ffffff';
         ctx.font = '10px monospace';
-        ctx.fillText('≥1', this.x + 6, this.y + 12);
+        ctx.textAlign = 'center';
+        ctx.fillText('≥1', this.x + this.width/2, this.y + this.height/2 + 3);
+        ctx.textAlign = 'left'; // Reset alignment
     }
 }
 
@@ -376,16 +434,91 @@ class NOTGate extends LogicGate {
     }
     
     calculate() {
+        // NOT gate requires exactly 1 input
         return this.inputs.length > 0 ? !this.inputs[0] : false;
     }
     
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw NOT symbol
-        ctx.fillStyle = '#fff';
-        ctx.font = '10px monospace';
-        ctx.fillText('!', this.x + 9, this.y + 12);
+        // Draw NOT symbol with better positioning for 2x1 layout
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('!', this.x + this.width/2, this.y + this.height/2 + 5);
+        ctx.textAlign = 'left'; // Reset alignment
+    }
+}
+
+// XOR Gate
+class XORGate extends LogicGate {
+    constructor(x, y) {
+        super('xor-gate', x, y);
+    }
+    
+    calculate() {
+        // XOR gate requires exactly 2 inputs
+        if (this.inputs.length < 2) return false;
+        return this.inputs[0] !== this.inputs[1];
+    }
+    
+    draw(ctx) {
+        super.draw(ctx);
+        
+        // Draw XOR symbol with better positioning for 2x1 layout
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('XOR', this.x + this.width/2, this.y + this.height/2 + 3);
+        ctx.textAlign = 'left'; // Reset alignment
+    }
+}
+
+// NAND Gate
+class NANDGate extends LogicGate {
+    constructor(x, y) {
+        super('nand-gate', x, y);
+    }
+    
+    calculate() {
+        // NAND gate requires exactly 2 inputs
+        if (this.inputs.length < 2) return true;
+        return !(this.inputs[0] && this.inputs[1]);
+    }
+    
+    draw(ctx) {
+        super.draw(ctx);
+        
+        // Draw NAND symbol with better positioning for 2x1 layout
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('NAND', this.x + this.width/2, this.y + this.height/2 + 3);
+        ctx.textAlign = 'left'; // Reset alignment
+    }
+}
+
+// NOR Gate
+class NORGate extends LogicGate {
+    constructor(x, y) {
+        super('nor-gate', x, y);
+    }
+    
+    calculate() {
+        // NOR gate requires exactly 2 inputs
+        if (this.inputs.length < 2) return true;
+        return !(this.inputs[0] || this.inputs[1]);
+    }
+    
+    draw(ctx) {
+        super.draw(ctx);
+        
+        // Draw NOR symbol with better positioning for 2x1 layout
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('NOR', this.x + this.width/2, this.y + this.height/2 + 3);
+        ctx.textAlign = 'left'; // Reset alignment
     }
 }
 
@@ -409,6 +542,12 @@ class ComponentFactory {
                 return new ORGate(x, y);
             case 'not-gate':
                 return new NOTGate(x, y);
+            case 'xor-gate':
+                return new XORGate(x, y);
+            case 'nand-gate':
+                return new NANDGate(x, y);
+            case 'nor-gate':
+                return new NORGate(x, y);
             default:
                 console.warn(`Unknown component type: ${type}`);
                 return null;

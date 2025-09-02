@@ -13,7 +13,7 @@
 body {
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
-    background-color: #1a1a2e;
+    background-color: #0d1b0f; /* Dark green PCB background */
     color: #eee;
     line-height: 1.4;
     image-rendering: pixelated;
@@ -84,6 +84,83 @@ body {
 .pixel-btn:active {
     transform: translate(2px, 2px);
     box-shadow: none;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+    padding-left: 10px;
+    border-left: 2px solid #533a7b;
+}
+
+.zoom-btn {
+    padding: 6px 10px;
+    font-size: 8px;
+    min-width: 30px;
+}
+
+.zoom-display {
+    background: #16213e;
+    border: 2px solid #533a7b;
+    padding: 6px 10px;
+    min-width: 50px;
+    text-align: center;
+    font-size: 8px;
+    color: #4cc9f0;
+    border-radius: 0;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* Audio Controls */
+.audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+    padding-left: 10px;
+    border-left: 2px solid #533a7b;
+}
+
+.audio-btn {
+    padding: 6px 10px;
+    font-size: 8px;
+    min-width: 35px;
+}
+
+.audio-btn.muted {
+    background: linear-gradient(135deg, #ff6b6b, #cc0000);
+}
+
+.volume-slider {
+    width: 60px;
+    height: 20px;
+    background: #16213e;
+    border: 2px solid #533a7b;
+    border-radius: 0;
+    outline: none;
+    cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #4cc9f0;
+    border: 2px solid #533a7b;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: #4cc9f0;
+    border: 2px solid #533a7b;
+    border-radius: 0;
+    cursor: pointer;
 }
 
 /* Main Content Layout */
@@ -175,10 +252,10 @@ body {
     flex: 1;
     position: relative;
     background: 
-        linear-gradient(90deg, rgba(83, 58, 123, 0.1) 1px, transparent 1px),
-        linear-gradient(rgba(83, 58, 123, 0.1) 1px, transparent 1px);
+        linear-gradient(90deg, rgba(74, 124, 89, 0.2) 1px, transparent 1px),
+        linear-gradient(rgba(74, 124, 89, 0.2) 1px, transparent 1px);
     background-size: 20px 20px;
-    background-color: #0f0f23;
+    background-color: #0a1e0c; /* Dark green PCB background */
     overflow: hidden;
 }
 
@@ -198,8 +275,8 @@ body {
     bottom: 0;
     pointer-events: none;
     background-image: 
-        linear-gradient(rgba(76, 201, 240, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(76, 201, 240, 0.1) 1px, transparent 1px);
+        linear-gradient(rgba(135, 206, 137, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(135, 206, 137, 0.15) 1px, transparent 1px);
     background-size: 20px 20px;
 }
 
