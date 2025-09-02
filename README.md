@@ -143,7 +143,7 @@ Contributions are welcome! Please read our contributing guidelines and submit pu
 - Inspired by **Virtual Circuit Board** and **Turing Complete**
 - Retro aesthetic inspired by classic 8-bit games
 - Built with using vanilla JavaScript and HTML5 Canvas
-
+- *Special Thanks* to OpenAI and COPILOT for helping create Graphics elements and all the documentation for this project.
 ---
 
 **Made with wires by [Master-yug](https://github.com/Master-yug)**
