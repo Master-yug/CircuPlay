@@ -325,11 +325,11 @@ class LogicGate extends Component {
         super(type, x, y);
         this.inputs = [];
         this.output = false;
-        // Make logic gates 2x1 size (40x20 pixels) for better wire connections
+        // Make logic gates 3x1 size (60x20 pixels) to prevent current sharing issues
         this.width = 20;
-        this.height = 40; // 2 grid cells tall
+        this.height = 60; // 3 grid cells tall
         this.gridWidth = 1;  // 1 cell wide
-        this.gridHeight = 2; // 2 cells tall
+        this.gridHeight = 3; // 3 cells tall
     }
     
     addInput(value) {
@@ -356,13 +356,13 @@ class LogicGate extends Component {
         ctx.lineWidth = 1;
         ctx.strokeRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2);
         
-        // Draw input terminals (copper pads) - positioned for 2-cell height
+        // Draw input terminals (copper pads) - positioned for 3-cell height with spacing
         ctx.fillStyle = '#cd7f32'; // Copper color
         ctx.fillRect(this.x - 1, this.y + 8, 3, 3);   // Top input (first grid cell)
-        ctx.fillRect(this.x - 1, this.y + 28, 3, 3);  // Bottom input (second grid cell)
+        ctx.fillRect(this.x - 1, this.y + 48, 3, 3);  // Bottom input (third grid cell, skipping middle)
         
-        // Draw output terminal (copper pad)
-        ctx.fillRect(this.x + this.width - 2, this.y + 18, 3, 3); // Center output
+        // Draw output terminal (copper pad) - centered on 3-cell height
+        ctx.fillRect(this.x + this.width - 2, this.y + 28, 3, 3); // Center output
         
         // Power indicator with circuit board style
         if (this.powered) {
@@ -394,7 +394,7 @@ class ANDGate extends LogicGate {
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw AND symbol with better positioning for 2x1 layout
+        // Draw AND symbol with better positioning for 3x1 layout
         ctx.fillStyle = '#ffffff';
         ctx.font = '12px monospace';
         ctx.textAlign = 'center';
@@ -418,7 +418,7 @@ class ORGate extends LogicGate {
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw OR symbol with better positioning for 2x1 layout
+        // Draw OR symbol with better positioning for 3x1 layout
         ctx.fillStyle = '#ffffff';
         ctx.font = '10px monospace';
         ctx.textAlign = 'center';
@@ -441,7 +441,7 @@ class NOTGate extends LogicGate {
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw NOT symbol with better positioning for 2x1 layout
+        // Draw NOT symbol with better positioning for 3x1 layout
         ctx.fillStyle = '#ffffff';
         ctx.font = '14px monospace';
         ctx.textAlign = 'center';
@@ -465,7 +465,7 @@ class XORGate extends LogicGate {
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw XOR symbol with better positioning for 2x1 layout
+        // Draw XOR symbol with better positioning for 3x1 layout
         ctx.fillStyle = '#ffffff';
         ctx.font = '9px monospace';
         ctx.textAlign = 'center';
@@ -489,7 +489,7 @@ class NANDGate extends LogicGate {
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw NAND symbol with better positioning for 2x1 layout
+        // Draw NAND symbol with better positioning for 3x1 layout
         ctx.fillStyle = '#ffffff';
         ctx.font = '8px monospace';
         ctx.textAlign = 'center';
@@ -513,7 +513,7 @@ class NORGate extends LogicGate {
     draw(ctx) {
         super.draw(ctx);
         
-        // Draw NOR symbol with better positioning for 2x1 layout
+        // Draw NOR symbol with better positioning for 3x1 layout
         ctx.fillStyle = '#ffffff';
         ctx.font = '9px monospace';
         ctx.textAlign = 'center';

@@ -82,13 +82,21 @@ class CircuitSimulator {
             }
         });
         
-        // Update all components
+        // Update logic gates after power propagation so they can see powered inputs
+        this.updateLogicGates();
+        
+        // Propagate power from logic gates that now have output=true
+        const gates = this.components.filter(c => c instanceof LogicGate);
+        gates.forEach(gate => {
+            if (gate.output) {
+                this.propagatePower(gate, new Set());
+            }
+        });
+        
+        // Update all components again after logic gate power propagation
         this.components.forEach(component => {
             component.update();
         });
-        
-        // Update logic gates
-        this.updateLogicGates();
     }
     
     // Propagate power through the circuit
@@ -112,6 +120,21 @@ class CircuitSimulator {
             // Continue propagation through wires and conductors
             if (this.shouldPropagate(component)) {
                 this.propagatePower(component, visited);
+            }
+        }
+        
+        // Special handling for logic gates - propagate power from output terminal
+        if (source instanceof LogicGate && source.output) {
+            // For logic gates, also check the output position (to the right of the gate)
+            const outputX = source.gridX + 1;
+            const outputY = source.gridY + 1; // Middle of the 3x1 gate
+            
+            const outputComponent = this.grid.getComponent(outputX, outputY);
+            if (outputComponent && !visited.has(outputComponent.id) && this.canConduct(outputComponent)) {
+                outputComponent.powered = true;
+                if (this.shouldPropagate(outputComponent)) {
+                    this.propagatePower(outputComponent, visited);
+                }
             }
         }
     }
@@ -163,10 +186,10 @@ class CircuitSimulator {
         gates.forEach(gate => {
             gate.inputs = [];
             
-            // For 2x1 gates, check inputs at both grid positions
+            // For 3x1 gates, check inputs at first and third grid positions (skipping middle)
             const inputPositions = [
                 { x: gate.gridX - 1, y: gate.gridY },     // Top input (left of first cell)
-                { x: gate.gridX - 1, y: gate.gridY + 1 }  // Bottom input (left of second cell)
+                { x: gate.gridX - 1, y: gate.gridY + 2 }  // Bottom input (left of third cell, skipping middle)
             ];
             
             inputPositions.forEach(pos => {
@@ -243,25 +266,25 @@ class CircuitSimulator {
     createBasicANDGate() {
         this.grid.clear();
         
-        // Create AND gate circuit
+        // Create AND gate circuit with proper spacing for 3x1 gate
         const battery1 = ComponentFactory.create('battery', 0, 0);
-        const battery2 = ComponentFactory.create('battery', 0, 20);
+        const battery2 = ComponentFactory.create('battery', 0, 40);
         const switch1 = ComponentFactory.create('switch', 20, 0);
-        const switch2 = ComponentFactory.create('switch', 20, 20);
+        const switch2 = ComponentFactory.create('switch', 20, 40);
         const wire1 = ComponentFactory.create('wire', 40, 0);
-        const wire2 = ComponentFactory.create('wire', 40, 20);
+        const wire2 = ComponentFactory.create('wire', 40, 40);
         const andGate = ComponentFactory.create('and-gate', 60, 10);
-        const led = ComponentFactory.create('led', 80, 10);
+        const led = ComponentFactory.create('led', 80, 20);
         
-        // Place components
+        // Place components with proper grid spacing for 3x1 AND gate
         this.grid.placeComponent(battery1, 0, 0);
-        this.grid.placeComponent(battery2, 0, 1);
+        this.grid.placeComponent(battery2, 0, 2);  // Skip middle row for gap
         this.grid.placeComponent(switch1, 1, 0);
-        this.grid.placeComponent(switch2, 1, 1);
+        this.grid.placeComponent(switch2, 1, 2);  // Skip middle row for gap
         this.grid.placeComponent(wire1, 2, 0);
-        this.grid.placeComponent(wire2, 2, 1);
-        this.grid.placeComponent(andGate, 3, 0);
-        this.grid.placeComponent(led, 4, 0);
+        this.grid.placeComponent(wire2, 2, 2);    // Skip middle row for gap
+        this.grid.placeComponent(andGate, 3, 0);  // 3x1 gate spans rows 0,1,2
+        this.grid.placeComponent(led, 4, 1);      // Center LED at middle row
         
         // Add to simulation
         this.components = [];

@@ -33,6 +33,7 @@ class UIManager {
         this.setupButtons();
         this.addZoomControls();
         this.addAudioControls();
+        this.setupNavigationControls();
     }
     
     // Setup all event listeners
@@ -114,22 +115,6 @@ class UIManager {
         
         document.getElementById('loadBasicAND').addEventListener('click', () => {
             this.loadStarterCircuit('basicAND');
-        });
-        
-        document.getElementById('loadXORDemo').addEventListener('click', () => {
-            this.loadStarterCircuit('xorDemo');
-        });
-        
-        document.getElementById('loadFullAdder').addEventListener('click', () => {
-            this.loadStarterCircuit('fullAdder');
-        });
-        
-        document.getElementById('loadSRFlipFlop').addEventListener('click', () => {
-            this.loadStarterCircuit('srFlipFlop');
-        });
-        
-        document.getElementById('loadCounter').addEventListener('click', () => {
-            this.loadStarterCircuit('counter');
         });
     }
     
@@ -1087,5 +1072,37 @@ class UIManager {
         }
         
         this.ctx.restore();
+    }
+    
+    // Setup navigation controls
+    setupNavigationControls() {
+        const panStep = 50; // pixels to pan per button press
+        
+        // Pan up
+        document.getElementById('panUp')?.addEventListener('click', () => {
+            this.panOffset.y += panStep;
+        });
+        
+        // Pan down
+        document.getElementById('panDown')?.addEventListener('click', () => {
+            this.panOffset.y -= panStep;
+        });
+        
+        // Pan left
+        document.getElementById('panLeft')?.addEventListener('click', () => {
+            this.panOffset.x += panStep;
+        });
+        
+        // Pan right
+        document.getElementById('panRight')?.addEventListener('click', () => {
+            this.panOffset.x -= panStep;
+        });
+        
+        // Center view
+        document.getElementById('panCenter')?.addEventListener('click', () => {
+            this.panOffset = { x: 0, y: 0 };
+            this.zoom = 1.0;
+            this.updateZoomDisplay();
+        });
     }
 }
