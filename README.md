@@ -1,21 +1,23 @@
 # CircuPlay – Pixel Sandbox for Circuits
 
  A browser-based retro-pixel themed sandbox where users can drag & drop circuit components onto a grid and see them "come alive" with pixel animations.
-
+ ![CircuPlay Screenshot](https://github.com/user-attachments/assets/26e6ea76-5b86-42b3-8263-42809d56f654)
 ## Features
 
 ### Core Features
 - **Breadboard-style grid background** with retro 8-bit pixel aesthetic
-- **Drag & drop components**: wires, batteries, resistors, LEDs, switches, and basic logic gates (AND, OR, NOT)
+- **Drag & drop components**: wires, batteries, resistors, LEDs, switches, and logic gates (AND, OR, NOT, XOR, NAND, NOR)
 - **Real-time circuit simulation**:
   - Current flows from power → wire → component
   - LEDs light up when powered with glow effects
   - Logic gates calculate outputs instantly
   - Switches can be toggled to control flow
 - **Pixel-style animations**: sparks moving along wires, LED glow effects
+- **Retro 8-bit audio system**: Sound effects for interactions and feedback
 - **Save/Load circuits** with JSON format using localStorage
 - **Export/Import JSON** for sharing circuits
 - **Pre-built starter circuits** (blinking LED, basic AND gate)
+- **Audio controls**: Volume adjustment and mute toggle
 
 ### Technical Features
 - **Fully client-side** - runs entirely in browser (no backend required)
@@ -23,6 +25,7 @@
 - **Lightweight** - no external dependencies, pure vanilla JavaScript
 - **Responsive design** - works on desktop and mobile browsers
 - **Pixel-perfect rendering** with HTML5 Canvas
+- **Web Audio API integration** - retro 8-bit sound effects system
 
 ## How to Use
 
@@ -32,14 +35,23 @@
 3. **Right-click components** to delete them
 4. **Watch the magic** as LEDs light up and current flows through wires!
 
+### Navigation & Zoom
+- **Zoom controls**: Use +/- buttons or keyboard shortcuts to zoom in/out
+- **Pan controls**: Use arrow buttons to navigate around large circuits
+- **Center view**: Click the home button to reset view position
+- **Audio controls**: Adjust volume or mute sound effects
+
 ### Keyboard Shortcuts
 - `Delete`/`Backspace`: Delete selected component
 - `Escape`: Deselect component
 - `Ctrl+S`: Save circuit
 - `Ctrl+O`: Load circuit
 - `Ctrl+C`: Clear circuit
+- `Ctrl++`: Zoom in
+- `Ctrl+-`: Zoom out
+- `Ctrl+0`: Reset zoom
 
-## Components
+## 🔧 Components
 
 | Component | Description | Behavior |
 |-----------|-------------|----------|
@@ -51,8 +63,11 @@
 |  **AND Gate** | Logic gate | Output HIGH only when both inputs are HIGH |
 |  **OR Gate** | Logic gate | Output HIGH when at least one input is HIGH |
 |  **NOT Gate** | Logic inverter | Output opposite of input (HIGH→LOW, LOW→HIGH) |
+|  **XOR Gate** | Exclusive OR gate | Output HIGH when inputs are different |
+|  **NAND Gate** | NOT-AND gate | Output LOW only when both inputs are HIGH |
+|  **NOR Gate** | NOT-OR gate | Output LOW when at least one input is HIGH |
 
-## File Structure
+## 💾 File Structure
 
 ```
 CircuPlayCOPILOT/
@@ -66,11 +81,13 @@ CircuPlayCOPILOT/
 │   ├── components.js   # Component classes and factory
 │   ├── simulation.js   # Circuit simulation engine
 │   ├── ui.js          # UI controls and interactions
-│   └── storage.js     # Save/load functionality
+│   ├── storage.js     # Save/load functionality
+│   └── audio.js       # Audio system and sound effects
 └── README.md          # This file
 ```
 
-## Save/Load Format
+
+## 🔄 Save/Load Format
 
 Circuits are saved as JSON with the following structure:
 ```json
@@ -93,6 +110,7 @@ Circuits are saved as JSON with the following structure:
 }
 ```
 
+
 ## Development
 
 ### Architecture
@@ -101,6 +119,7 @@ Circuits are saved as JSON with the following structure:
 - **Simulation Engine**: Handles power flow and logic calculations
 - **UI Manager**: Handles all user interactions and rendering
 - **Storage Manager**: Manages save/load operations and localStorage
+- **Audio System**: Web Audio API-based retro sound effects
 
 ### Performance
 - **60 FPS rendering** with requestAnimationFrame
