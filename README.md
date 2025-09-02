@@ -129,7 +129,7 @@ Contributions are welcome! Please read our contributing guidelines and submit pu
 
 **Made with wires by [Master-yug](https://github.com/Master-yug)**
 
-*Have fun building circuits! *
+*Have fun building circuits!*
 
 
 
