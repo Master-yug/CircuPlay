@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CircuPlay - Pixel Sandbox for Circuits</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">CircuPlay</h1>
+            <div class="controls">
+                <button id="clearBtn" class="btn pixel-btn">Clear</button>
+                <button id="saveBtn" class="btn pixel-btn">Save</button>
+                <button id="loadBtn" class="btn pixel-btn">Load</button>
+                <button id="exportBtn" class="btn pixel-btn">Export</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+                <button id="importBtn" class="btn pixel-btn">Import</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Component Toolbar -->
+            <aside class="toolbar">
+                <h3>Components</h3>
+                <div class="component-palette">
+                    <div class="component-item" data-type="battery" draggable="true">
+                        <div class="component-icon battery-icon"></div>
+                        <span>Battery</span>
+                    </div>
+                    <div class="component-item" data-type="led" draggable="true">
+                        <div class="component-icon led-icon"></div>
+                        <span>LED</span>
+                    </div>
+                    <div class="component-item" data-type="resistor" draggable="true">
+                        <div class="component-icon resistor-icon"></div>
+                        <span>Resistor</span>
+                    </div>
+                    <div class="component-item" data-type="switch" draggable="true">
+                        <div class="component-icon switch-icon"></div>
+                        <span>Switch</span>
+                    </div>
+                    <div class="component-item" data-type="wire" draggable="true">
+                        <div class="component-icon wire-icon"></div>
+                        <span>Wire</span>
+                    </div>
+                    <div class="component-item" data-type="and-gate" draggable="true">
+                        <div class="component-icon and-gate-icon"></div>
+                        <span>AND Gate</span>
+                    </div>
+                    <div class="component-item" data-type="or-gate" draggable="true">
+                        <div class="component-icon or-gate-icon"></div>
+                        <span>OR Gate</span>
+                    </div>
+                    <div class="component-item" data-type="not-gate" draggable="true">
+                        <div class="component-icon not-gate-icon"></div>
+                        <span>NOT Gate</span>
+                    </div>
+                </div>
+                
+                <!-- Starter Circuits -->
+                <div class="starter-circuits">
+                    <h3>Starter Circuits</h3>
+                    <button class="btn pixel-btn" id="loadBlinkingLED">Blinking LED</button>
+                    <button class="btn pixel-btn" id="loadBasicAND">Basic AND Gate</button>
+                </div>
+            </aside>
+
+            <!-- Circuit Canvas -->
+            <main class="canvas-container">
+                <canvas id="circuitCanvas" width="800" height="600"></canvas>
+                <div class="grid-overlay"></div>
+            </main>
+        </div>
+
+        <!-- Info Panel -->
+        <footer class="info-panel">
+            <div class="status">Ready</div>
+            <div class="coordinates">Grid: (0, 0)</div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/grid.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/simulation.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
