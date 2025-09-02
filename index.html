@@ -89,10 +89,6 @@
                     <h3>Starter Circuits</h3>
                     <button class="btn pixel-btn" id="loadBlinkingLED">Blinking LED</button>
                     <button class="btn pixel-btn" id="loadBasicAND">Basic AND Gate</button>
-                    <button class="btn pixel-btn" id="loadXORDemo">XOR Demo</button>
-                    <button class="btn pixel-btn" id="loadFullAdder">Full Adder</button>
-                    <button class="btn pixel-btn" id="loadSRFlipFlop">SR Flip-Flop</button>
-                    <button class="btn pixel-btn" id="loadCounter">4-bit Counter</button>
                 </div>
             </aside>
 
@@ -100,6 +96,15 @@
             <main class="canvas-container">
                 <canvas id="circuitCanvas" width="800" height="600"></canvas>
                 <div class="grid-overlay"></div>
+                
+                <!-- Navigation Controls -->
+                <div class="navigation-controls">
+                    <button id="panUp" class="nav-btn nav-up" title="Pan Up">↑</button>
+                    <button id="panLeft" class="nav-btn nav-left" title="Pan Left">←</button>
+                    <button id="panCenter" class="nav-btn nav-center" title="Center View">⌂</button>
+                    <button id="panRight" class="nav-btn nav-right" title="Pan Right">→</button>
+                    <button id="panDown" class="nav-btn nav-down" title="Pan Down">↓</button>
+                </div>
             </main>
         </div>
 
