@@ -1,7 +1,11 @@
 # CircuPlay – Pixel Sandbox for Circuits
 
  A browser-based retro-pixel themed sandbox where users can drag & drop circuit components onto a grid and see them "come alive" with pixel animations.
+
+ [**DemoLink**](https://master-yug.github.io/CircuPlay/)
+
  ![CircuPlay Screenshot](https://github.com/user-attachments/assets/26e6ea76-5b86-42b3-8263-42809d56f654)
+
 ## Features
 
 ### Core Features
