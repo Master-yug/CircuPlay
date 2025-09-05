@@ -8,6 +8,11 @@ class CircuPlay {
         this.ui = null;
         this.animationId = null;
         this.isRunning = false;
+        
+        // Undo/Redo system
+        this.history = [];
+        this.historyIndex = -1;
+        this.maxHistorySize = 50;
     }
     
     // Initialize the application
@@ -95,6 +100,9 @@ class CircuPlay {
         
         // Show welcome message
         this.ui.showMessage('Welcome to CircuPlay! Drag components from the toolbar to build circuits.', 'success');
+        
+        // Save initial state for undo/redo system
+        this.saveState('Initial state');
     }
     
     // Stop the application
@@ -269,6 +277,104 @@ class CircuPlay {
         this.ui.showMessage(`${context} error: ${error.message}`, 'error');
     }
     
+    // Save current state to history
+    saveState(actionDescription = 'Action') {
+        try {
+            const state = {
+                timestamp: Date.now(),
+                action: actionDescription,
+                circuitData: this.simulator.exportCircuit()
+            };
+            
+            // Remove future history if we're not at the end
+            if (this.historyIndex < this.history.length - 1) {
+                this.history = this.history.slice(0, this.historyIndex + 1);
+            }
+            
+            // Add new state
+            this.history.push(state);
+            this.historyIndex++;
+            
+            // Limit history size
+            if (this.history.length > this.maxHistorySize) {
+                this.history.shift();
+                this.historyIndex--;
+            }
+            
+            console.log(`State saved: ${actionDescription} (${this.historyIndex + 1}/${this.history.length})`);
+        } catch (error) {
+            console.error('Failed to save state:', error);
+        }
+    }
+    
+    // Undo last action
+    undo() {
+        if (this.canUndo()) {
+            try {
+                this.historyIndex--;
+                const state = this.history[this.historyIndex];
+                this.simulator.importCircuit(state.circuitData);
+                this.ui.showMessage(`Undid: ${state.action}`, 'info');
+                console.log(`Undid: ${state.action} (${this.historyIndex + 1}/${this.history.length})`);
+                return true;
+            } catch (error) {
+                console.error('Failed to undo:', error);
+                this.ui.showMessage('Failed to undo action', 'error');
+                this.historyIndex++; // Restore index on failure
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    // Redo last undone action
+    redo() {
+        if (this.canRedo()) {
+            try {
+                this.historyIndex++;
+                const state = this.history[this.historyIndex];
+                this.simulator.importCircuit(state.circuitData);
+                this.ui.showMessage(`Redid: ${state.action}`, 'info');
+                console.log(`Redid: ${state.action} (${this.historyIndex + 1}/${this.history.length})`);
+                return true;
+            } catch (error) {
+                console.error('Failed to redo:', error);
+                this.ui.showMessage('Failed to redo action', 'error');
+                this.historyIndex--; // Restore index on failure
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    // Check if undo is possible
+    canUndo() {
+        return this.historyIndex > 0;
+    }
+    
+    // Check if redo is possible
+    canRedo() {
+        return this.historyIndex < this.history.length - 1;
+    }
+    
+    // Clear history
+    clearHistory() {
+        this.history = [];
+        this.historyIndex = -1;
+        console.log('History cleared');
+    }
+    
+    // Get history info
+    getHistoryInfo() {
+        return {
+            current: this.historyIndex + 1,
+            total: this.history.length,
+            canUndo: this.canUndo(),
+            canRedo: this.canRedo(),
+            maxSize: this.maxHistorySize
+        };
+    }
+    
     // Cleanup on page unload
     cleanup() {
         this.stop();
@@ -309,7 +415,11 @@ window.CircuPlayDebug = {
     exportCircuit: () => window.circuPlay.simulator.exportCircuit(),
     validateCircuit: () => window.circuPlay.simulator.validateCircuit(),
     clearStorage: () => window.circuPlay.storage.clearAll(),
-    getStorageInfo: () => window.circuPlay.storage.getStorageInfo()
+    getStorageInfo: () => window.circuPlay.storage.getStorageInfo(),
+    getHistoryInfo: () => window.circuPlay.getHistoryInfo(),
+    undo: () => window.circuPlay.undo(),
+    redo: () => window.circuPlay.redo(),
+    clearHistory: () => window.circuPlay.clearHistory()
 };
 
 console.log('🔌 CircuPlay main script loaded. Debugging available via window.CircuPlayDebug');

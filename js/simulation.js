@@ -150,6 +150,10 @@ class CircuitSimulator {
                 return true;
             case 'switch':
                 return component.closed;
+            case 'push-button':
+                return component.closed;
+            case 'buzzer':
+                return true;
             case 'and-gate':
             case 'or-gate':
             case 'not-gate':
@@ -167,6 +171,8 @@ class CircuitSimulator {
             case 'wire':
                 return true;
             case 'switch':
+                return component.closed;
+            case 'push-button':
                 return component.closed;
             case 'resistor':
                 return true; // Simplified - resistors conduct in this model

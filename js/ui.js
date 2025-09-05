@@ -209,6 +209,9 @@ class UIManager {
             return false;
         }
         
+        // Save state before placing component
+        window.circuPlay.saveState(`Place ${type}`);
+        
         // Create component
         const component = ComponentFactory.create(type, gridPos.x, gridPos.y);
         if (!component) {
@@ -263,6 +266,14 @@ class UIManager {
                 component.toggle();
                 window.audioManager.playSwitch();
                 this.updateStatus(`Switch ${component.closed ? 'closed' : 'opened'}`);
+            } else if (component.type === 'push-button') {
+                component.toggle(); // This will do a brief press
+                window.audioManager.playSwitch();
+                this.updateStatus(`Push button pressed briefly`);
+                // Force immediate simulation update to catch the button press
+                this.simulator.updateCircuit();
+                // Also trigger component updates to ensure buzzer sounds play
+                this.simulator.components.forEach(comp => comp.update());
             }
         } else {
             this.selectComponent(null);
@@ -343,6 +354,18 @@ class UIManager {
         menu.style.padding = '10px';
         menu.style.zIndex = '1000';
         
+        // Rotate button
+        const rotateBtn = document.createElement('button');
+        rotateBtn.textContent = 'Rotate';
+        rotateBtn.className = 'btn pixel-btn';
+        rotateBtn.style.width = '100%';
+        rotateBtn.style.marginBottom = '5px';
+        rotateBtn.onclick = () => {
+            this.rotateComponent(component);
+            document.body.removeChild(menu);
+        };
+        
+        // Delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Delete';
         deleteBtn.className = 'btn pixel-btn';
@@ -352,6 +375,7 @@ class UIManager {
             document.body.removeChild(menu);
         };
         
+        menu.appendChild(rotateBtn);
         menu.appendChild(deleteBtn);
         document.body.appendChild(menu);
         
@@ -370,6 +394,9 @@ class UIManager {
     
     // Delete component
     deleteComponent(component) {
+        // Save state before deleting component
+        window.circuPlay.saveState(`Delete ${component.type}`);
+        
         const gridCoord = this.grid.pixelToGrid(component.x, component.y);
         this.grid.removeComponent(gridCoord.x, gridCoord.y);
         this.simulator.removeComponent(component);
@@ -379,6 +406,81 @@ class UIManager {
         }
         
         this.updateStatus(`Deleted ${component.type}`);
+    }
+    
+    // Rotate component
+    rotateComponent(component) {
+        // Save state before rotating component
+        window.circuPlay.saveState(`Rotate ${component.type}`);
+        
+        component.rotate();
+        window.audioManager.playClick();
+        this.updateStatus(`Rotated ${component.type} to ${component.rotation}°`);
+    }
+    
+    // Select all components (Ctrl+A)
+    selectAllComponents() {
+        const componentCount = this.simulator.components.length;
+        if (componentCount === 0) {
+            this.showMessage('No components to select', 'info');
+            return;
+        }
+        
+        // For now, just show a count since CircuPlay doesn't have multi-selection
+        this.showMessage(`Found ${componentCount} component${componentCount === 1 ? '' : 's'}`, 'info');
+        this.updateStatus(`${componentCount} component${componentCount === 1 ? '' : 's'} in circuit`);
+        window.audioManager.playClick();
+    }
+    
+    // Duplicate selected component (Ctrl+D)
+    duplicateComponent() {
+        if (!this.selectedComponent) {
+            this.showMessage('No component selected to duplicate', 'error');
+            return;
+        }
+        
+        // Find a nearby empty position
+        const gridCoord = this.grid.pixelToGrid(this.selectedComponent.x, this.selectedComponent.y);
+        let newX = gridCoord.x + 1;
+        let newY = gridCoord.y;
+        
+        // Try to find an empty spot nearby
+        for (let attempts = 0; attempts < 10; attempts++) {
+            if (this.grid.isEmpty(newX, newY)) {
+                break;
+            }
+            newX++;
+            if (newX >= this.grid.cols) {
+                newX = 0;
+                newY++;
+                if (newY >= this.grid.rows) {
+                    this.showMessage('No space available for duplicate', 'error');
+                    return;
+                }
+            }
+        }
+        
+        // Create duplicate component at new position
+        const newPos = this.grid.gridToPixel(newX, newY);
+        const duplicate = ComponentFactory.create(this.selectedComponent.type, newPos.x, newPos.y);
+        
+        if (duplicate) {
+            // Copy properties from original
+            duplicate.setProperties(this.selectedComponent.getProperties());
+            duplicate.rotation = this.selectedComponent.rotation;
+            
+            // Save state and place component
+            window.circuPlay.saveState(`Duplicate ${this.selectedComponent.type}`);
+            
+            if (this.grid.placeComponent(duplicate, newX, newY)) {
+                this.simulator.addComponent(duplicate);
+                this.selectComponent(duplicate);
+                this.updateStatus(`Duplicated ${this.selectedComponent.type}`);
+                window.audioManager.playPlaceComponent();
+            } else {
+                this.showMessage('Failed to place duplicate', 'error');
+            }
+        }
     }
     
     // Handle keyboard input
@@ -451,6 +553,30 @@ class UIManager {
                     this.toggleGrid();
                 }
                 break;
+            case 'z':
+                if (e.ctrlKey && !e.shiftKey) {
+                    e.preventDefault();
+                    window.circuPlay.undo();
+                    window.audioManager.playClick();
+                } else if (e.ctrlKey && e.shiftKey) {
+                    e.preventDefault();
+                    window.circuPlay.redo();
+                    window.audioManager.playClick();
+                }
+                break;
+            case 'y':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    window.circuPlay.redo();
+                    window.audioManager.playClick();
+                }
+                break;
+            case 'r':
+                if (!e.ctrlKey && this.selectedComponent) {
+                    e.preventDefault();
+                    this.rotateComponent(this.selectedComponent);
+                }
+                break;
             case 'Tab':
                 e.preventDefault();
                 this.selectNextComponent();
@@ -462,6 +588,11 @@ class UIManager {
                     this.selectedComponent.toggle();
                     window.audioManager.playSwitch();
                     this.updateStatus(`Switch ${this.selectedComponent.closed ? 'closed' : 'opened'}`);
+                } else if (this.selectedComponent && this.selectedComponent.type === 'push-button') {
+                    e.preventDefault();
+                    this.selectedComponent.toggle(); // This will do a brief press
+                    window.audioManager.playSwitch();
+                    this.updateStatus(`Push button pressed briefly`);
                 }
                 break;
             case '=':
@@ -520,6 +651,39 @@ class UIManager {
                 break;
             case '9':
                 if (!e.ctrlKey) this.quickSelectComponent('xor-gate');
+                break;
+            case '0':
+                if (!e.ctrlKey) this.quickSelectComponent('buzzer');
+                break;
+            case 'b':
+                if (!e.ctrlKey) this.quickSelectComponent('buzzer');
+                break;
+            case 'p':
+                if (!e.ctrlKey) this.quickSelectComponent('push-button');
+                break;
+            case 'l':
+                if (!e.ctrlKey) this.quickSelectComponent('led');
+                break;
+            case 'w':
+                if (!e.ctrlKey) this.quickSelectComponent('wire');
+                break;
+            case 'a':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    // Select all components
+                    this.selectAllComponents();
+                } else {
+                    this.quickSelectComponent('and-gate');
+                }
+                break;
+            case 'd':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    // Duplicate selected component
+                    this.duplicateComponent();
+                } else {
+                    // No component shortcut for 'd' yet
+                }
                 break;
         }
     }
@@ -696,6 +860,18 @@ class UIManager {
             this.isPanning = true;
             this.lastPanPos = { x: e.clientX, y: e.clientY };
             this.canvas.style.cursor = 'grabbing';
+        } else if (e.button === 0) { // Left click
+            // Check for push button press
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const component = this.grid.getComponentAtPixel(x, y);
+            if (component && component.type === 'push-button') {
+                component.press();
+                window.audioManager.playSwitch();
+                this.updateStatus(`Push button pressed`);
+            }
         }
     }
     
@@ -704,6 +880,17 @@ class UIManager {
         if (this.isPanning) {
             this.isPanning = false;
             this.canvas.style.cursor = '';
+        } else if (e.button === 0) { // Left click release
+            // Check for push button release
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const component = this.grid.getComponentAtPixel(x, y);
+            if (component && component.type === 'push-button') {
+                component.release();
+                this.updateStatus(`Push button released`);
+            }
         }
     }
     

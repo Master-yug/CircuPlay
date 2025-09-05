@@ -138,6 +138,11 @@ class AudioManager {
         oscillator.stop(this.audioContext.currentTime + 0.5);
     }
     
+    // Buzzer sound
+    playBuzzer() {
+        this.playBeep(880, 0.2, 'square'); // Classic buzzer frequency
+    }
+    
     // Button click sound
     playClick() {
         this.playBeep(1000, 0.05, 'square');

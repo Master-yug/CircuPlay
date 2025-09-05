@@ -10,6 +10,7 @@ class Component {
         this.height = 20;
         this.powered = false;
         this.connections = [];
+        this.rotation = 0; // Rotation in degrees (0, 90, 180, 270)
         this.id = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
     
@@ -46,7 +47,8 @@ class Component {
     // Get component properties for serialization
     getProperties() {
         return {
-            powered: this.powered
+            powered: this.powered,
+            rotation: this.rotation
         };
     }
     
@@ -54,6 +56,42 @@ class Component {
     setProperties(props) {
         if (props.powered !== undefined) {
             this.powered = props.powered;
+        }
+        if (props.rotation !== undefined) {
+            this.rotation = props.rotation;
+        }
+    }
+    
+    // Rotate component by 90 degrees clockwise
+    rotate() {
+        this.rotation = (this.rotation + 90) % 360;
+        console.log(`${this.type} rotated to ${this.rotation} degrees`);
+    }
+    
+    // Set specific rotation
+    setRotation(angle) {
+        this.rotation = angle % 360;
+        if (this.rotation < 0) this.rotation += 360;
+    }
+    
+    // Apply rotation transform for drawing
+    applyRotation(ctx) {
+        if (this.rotation !== 0) {
+            ctx.save();
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+            ctx.translate(centerX, centerY);
+            ctx.rotate((this.rotation * Math.PI) / 180);
+            ctx.translate(-centerX, -centerY);
+            return true; // Indicates transform was applied
+        }
+        return false; // No transform applied
+    }
+    
+    // Restore rotation transform
+    restoreRotation(ctx, transformed) {
+        if (transformed) {
+            ctx.restore();
         }
     }
     
@@ -73,6 +111,9 @@ class Battery extends Component {
     }
     
     draw(ctx) {
+        // Apply rotation transform if needed
+        const transformed = this.applyRotation(ctx);
+        
         // Draw battery body with PCB-style appearance
         ctx.fillStyle = this.powered ? '#1a4d1a' : '#0d2d0d';
         ctx.fillRect(this.x + 2, this.y + 6, 14, 8);
@@ -105,6 +146,9 @@ class Battery extends Component {
             ctx.arc(this.x + this.width - 3, this.y + 3, 2, 0, 2 * Math.PI);
             ctx.fill();
         }
+        
+        // Restore rotation transform
+        this.restoreRotation(ctx, transformed);
     }
     
     update() {
@@ -274,6 +318,110 @@ class Switch extends Component {
     }
 }
 
+// Push Button Component (Momentary Switch)
+class PushButton extends Component {
+    constructor(x, y) {
+        super('push-button', x, y);
+        this.closed = false;
+        this.isPressed = false; // Track if mouse is currently pressed
+    }
+    
+    draw(ctx) {
+        // Apply rotation transform if needed
+        const transformed = this.applyRotation(ctx);
+        
+        // Draw PCB-style button body
+        ctx.fillStyle = this.closed ? '#1a4d1a' : '#2a1a1a';
+        ctx.fillRect(this.x + 2, this.y + 5, 16, 10);
+        
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x + 2, this.y + 5, 16, 10);
+        
+        // Draw copper terminals
+        ctx.fillStyle = '#cd7f32'; // Copper color
+        ctx.fillRect(this.x, this.y + 9, 2, 2);
+        ctx.fillRect(this.x + 18, this.y + 9, 2, 2);
+        
+        // Draw button actuator (round button style)
+        const buttonHeight = this.closed ? 1 : 2;
+        ctx.fillStyle = this.closed ? '#666' : '#999';
+        ctx.fillRect(this.x + 6, this.y + 3 + (2 - buttonHeight), 8, buttonHeight + 2);
+        
+        // Button cap (slightly rounded appearance)
+        ctx.fillStyle = this.closed ? '#888' : '#bbb';
+        ctx.fillRect(this.x + 7, this.y + 2 + (2 - buttonHeight), 6, buttonHeight + 1);
+        
+        // State indicator - different from switch (square instead of circle)
+        ctx.fillStyle = this.closed ? '#00ff41' : '#ff4444';
+        ctx.fillRect(this.x + 9, this.y + 16, 2, 2);
+        
+        // Power indicator when closed and powered
+        if (this.closed && this.powered) {
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x - 1, this.y - 1, this.width + 2, this.height + 2);
+        }
+        
+        // Restore rotation transform
+        this.restoreRotation(ctx, transformed);
+    }
+    
+    update() {
+        // Push button only conducts when pressed
+        if (!this.closed) {
+            this.powered = false;
+        }
+    }
+    
+    // Start pressing the button
+    press() {
+        if (!this.isPressed) {
+            this.isPressed = true;
+            this.closed = true;
+            console.log('Push button pressed');
+        }
+    }
+    
+    // Release the button
+    release() {
+        if (this.isPressed) {
+            this.isPressed = false;
+            this.closed = false;
+            console.log('Push button released');
+        }
+    }
+    
+    // Override toggle to use momentary behavior
+    toggle() {
+        // Push buttons don't toggle - they're momentary
+        // This method is called for click events, so we'll simulate a quick press
+        this.press();
+        setTimeout(() => {
+            this.release();
+        }, 200); // Brief press duration - longer to ensure simulation catches it
+    }
+    
+    getProperties() {
+        return {
+            ...super.getProperties(),
+            closed: this.closed,
+            isPressed: this.isPressed
+        };
+    }
+    
+    setProperties(props) {
+        super.setProperties(props);
+        if (props.closed !== undefined) {
+            this.closed = props.closed;
+        }
+        if (props.isPressed !== undefined) {
+            this.isPressed = props.isPressed;
+        }
+    }
+}
+
 // Wire Component
 class Wire extends Component {
     constructor(x, y) {
@@ -316,6 +464,102 @@ class Wire extends Component {
         // Connection points
         ctx.fillStyle = this.powered ? '#4cc9f0' : '#333';
         ctx.fillRect(this.x + 9, this.y + 9, 2, 2);
+    }
+}
+
+// Buzzer Component
+class Buzzer extends Component {
+    constructor(x, y) {
+        super('buzzer', x, y);
+        this.frequency = 880; // Default buzzer frequency
+        this.lastSoundTime = 0; // Throttle sound to avoid spam
+        this.soundThrottle = 500; // Minimum time between sounds (ms)
+    }
+    
+    draw(ctx) {
+        // Apply rotation transform if needed
+        const transformed = this.applyRotation(ctx);
+        
+        // Draw buzzer body with PCB-style appearance
+        ctx.fillStyle = this.powered ? '#8b4513' : '#654321'; // Brown color for buzzer
+        ctx.fillRect(this.x + 3, this.y + 3, 14, 14);
+        
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x + 3, this.y + 3, 14, 14);
+        
+        // Draw copper terminals
+        ctx.fillStyle = '#cd7f32'; // Copper color
+        ctx.fillRect(this.x, this.y + 8, 3, 4); // Left terminal
+        ctx.fillRect(this.x + 17, this.y + 8, 3, 4); // Right terminal
+        
+        // Draw speaker cone pattern
+        ctx.strokeStyle = this.powered ? '#ffa500' : '#8b4513';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(this.x + 10, this.y + 10, 5, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(this.x + 10, this.y + 10, 3, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw center dot
+        ctx.fillStyle = this.powered ? '#ffa500' : '#8b4513';
+        ctx.beginPath();
+        ctx.arc(this.x + 10, this.y + 10, 1, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Sound wave indicators when powered
+        if (this.powered) {
+            ctx.strokeStyle = '#ffa500';
+            ctx.lineWidth = 1;
+            
+            // Animated sound waves
+            const time = Date.now() * 0.01;
+            for (let i = 1; i <= 3; i++) {
+                const alpha = Math.abs(Math.sin(time + i * 0.5));
+                ctx.globalAlpha = alpha * 0.7;
+                ctx.beginPath();
+                ctx.arc(this.x + 10, this.y + 10, 6 + i * 2, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            
+            // Power indicator
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x - 1, this.y - 1, this.width + 2, this.height + 2);
+        }
+        
+        // Restore rotation transform
+        this.restoreRotation(ctx, transformed);
+    }
+    
+    update() {
+        // Play buzzer sound when powered (with throttling)
+        if (this.powered && window.audioManager) {
+            const currentTime = Date.now();
+            if (currentTime - this.lastSoundTime > this.soundThrottle) {
+                window.audioManager.playBuzzer();
+                this.lastSoundTime = currentTime;
+            }
+        }
+    }
+    
+    getProperties() {
+        return {
+            ...super.getProperties(),
+            frequency: this.frequency
+        };
+    }
+    
+    setProperties(props) {
+        super.setProperties(props);
+        if (props.frequency !== undefined) {
+            this.frequency = props.frequency;
+        }
     }
 }
 
@@ -534,8 +778,12 @@ class ComponentFactory {
                 return new Resistor(x, y);
             case 'switch':
                 return new Switch(x, y);
+            case 'push-button':
+                return new PushButton(x, y);
             case 'wire':
                 return new Wire(x, y);
+            case 'buzzer':
+                return new Buzzer(x, y);
             case 'and-gate':
                 return new ANDGate(x, y);
             case 'or-gate':
