@@ -77,6 +77,39 @@
     transform: rotate(15deg);
 }
 
+/* Push Button Icon */
+.push-button-icon {
+    background: linear-gradient(135deg, 
+        #999 0%, #999 30%, 
+        #ddd 30%, #ddd 70%, 
+        #999 70%, #999 100%);
+    border: 1px solid #666;
+    border-radius: 50%;
+    position: relative;
+}
+
+.push-button-icon::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 12px;
+    height: 12px;
+    background: radial-gradient(circle, #eee 20%, #ccc 70%);
+    border: 1px solid #888;
+    border-radius: 50%;
+}
+
+.push-button-icon::after {
+    content: '●';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666;
+    font-size: 8px;
+}
+
 /* Wire Icon */
 .wire-icon {
     background: linear-gradient(45deg, 
@@ -84,6 +117,28 @@
         #4cc9f0 45%, #4cc9f0 55%, 
         transparent 55%, transparent 100%);
     border: 1px solid #666;
+}
+
+/* Buzzer Icon */
+.buzzer-icon {
+    background: radial-gradient(circle, 
+        #8b4513 0%, #8b4513 40%,
+        #654321 40%, #654321 60%,
+        #8b4513 60%, #8b4513 100%);
+    border: 1px solid #666;
+    border-radius: 50%;
+    position: relative;
+}
+
+.buzzer-icon::before {
+    content: '♪';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffa500;
+    font-size: 10px;
+    font-weight: bold;
 }
 
 /* AND Gate Icon */
