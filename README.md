@@ -42,8 +42,10 @@
 ### Building Circuits
 1. **Drag components** from the left toolbar onto the grid
 2. **Click switches** to toggle them on/off
-3. **Right-click components** to delete them
-4. **Watch the magic** as LEDs light up and current flows through wires!
+3. **Hold push buttons** to create momentary connections
+4. **Right-click components** to delete or rotate them
+5. **Use Ctrl+Z/Y** for undo/redo actions
+6. **Watch the magic** as LEDs light up, buzzers sound, and current flows through wires!
 
 ### Navigation & Zoom
 - **Zoom controls**: Use +/- buttons or keyboard shortcuts to zoom in/out
@@ -54,9 +56,19 @@
 ### Keyboard Shortcuts
 - `Delete`/`Backspace`: Delete selected component
 - `Escape`: Deselect component
+- `R`: Rotate selected component
+- `Tab`: Select next component
+- `Enter`/`Space`: Toggle switch (when switch is selected)
 - `Ctrl+S`: Save circuit
 - `Ctrl+O`: Load circuit
 - `Ctrl+C`: Clear circuit
+- `Ctrl+E`: Export circuit to JSON file
+- `Ctrl+I`: Import circuit from JSON file
+- `Ctrl+Z`: Undo last action
+- `Ctrl+Shift+Z` or `Ctrl+Y`: Redo last undone action
+- `Ctrl+M`: Toggle audio on/off
+- `Ctrl+H`: Show help dialog
+- `Ctrl+G`: Toggle grid visibility
 - `Ctrl++`: Zoom in
 - `Ctrl+-`: Zoom out
 - `Ctrl+0`: Reset zoom
