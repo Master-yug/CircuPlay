@@ -81,7 +81,9 @@
 |  **LED** | Light-emitting diode | Lights up and glows when powered |
 |  **Resistor** | Current limiter | Conducts electricity (simplified model) |
 |  **Switch** | On/off control | Click to toggle open/closed state |
+|  **Push Button** | Momentary switch | Conducts only while pressed (mouse down) |
 |  **Wire** | Conductor | Carries current between components with spark animation |
+|  **Buzzer** | Audio output | Produces sound when powered |
 |  **AND Gate** | Logic gate | Output HIGH only when both inputs are HIGH |
 |  **OR Gate** | Logic gate | Output HIGH when at least one input is HIGH |
 |  **NOT Gate** | Logic inverter | Output opposite of input (HIGH→LOW, LOW→HIGH) |
