@@ -10,18 +10,22 @@
 
 ### Core Features
 - **Breadboard-style grid background** with retro 8-bit pixel aesthetic
-- **Drag & drop components**: wires, batteries, resistors, LEDs, switches, and logic gates (AND, OR, NOT, XOR, NAND, NOR)
+- **Drag & drop components**: wires, batteries, resistors, LEDs, switches, push buttons, buzzer, and logic gates (AND, OR, NOT, XOR, NAND, NOR)
 - **Real-time circuit simulation**:
   - Current flows from power → wire → component
   - LEDs light up when powered with glow effects
   - Logic gates calculate outputs instantly
   - Switches can be toggled to control flow
+  - Push buttons provide momentary connections
+  - Buzzer produces audio when powered
 - **Pixel-style animations**: sparks moving along wires, LED glow effects
 - **Retro 8-bit audio system**: Sound effects for interactions and feedback
 - **Save/Load circuits** with JSON format using localStorage
 - **Export/Import JSON** for sharing circuits
 - **Pre-built starter circuits** (blinking LED, basic AND gate)
 - **Audio controls**: Volume adjustment and mute toggle
+- **Undo/Redo system**: Full action history with 50-action memory
+- **Component rotation**: Right-click context menu to rotate components
 
 ### Technical Features
 - **Fully client-side** - runs entirely in browser (no backend required)
@@ -30,6 +34,8 @@
 - **Responsive design** - works on desktop and mobile browsers
 - **Pixel-perfect rendering** with HTML5 Canvas
 - **Web Audio API integration** - retro 8-bit sound effects system
+- **Advanced undo/redo** - 50-action history with state management
+- **Component rotation system** - context menus and keyboard shortcuts
 
 ## How to Use
 
