@@ -137,6 +137,21 @@ class CircuitSimulator {
                 }
             }
         }
+        
+        // Special handling for Timer component - propagate power from output terminal
+        if (source instanceof Timer && source.outputPowered) {
+            // For timer, check the output position (to the right of the timer)
+            const outputX = source.gridX + 1;
+            const outputY = source.gridY;
+            
+            const outputComponent = this.grid.getComponent(outputX, outputY);
+            if (outputComponent && !visited.has(outputComponent.id) && this.canConduct(outputComponent)) {
+                outputComponent.powered = true;
+                if (this.shouldPropagate(outputComponent)) {
+                    this.propagatePower(outputComponent, visited);
+                }
+            }
+        }
     }
     
     // Check if component can conduct electricity
@@ -153,6 +168,8 @@ class CircuitSimulator {
             case 'push-button':
                 return component.closed;
             case 'buzzer':
+                return true;
+            case 'timer':
                 return true;
             case 'and-gate':
             case 'or-gate':
@@ -176,6 +193,8 @@ class CircuitSimulator {
                 return component.closed;
             case 'resistor':
                 return true; // Simplified - resistors conduct in this model
+            case 'timer':
+                return component.outputPowered; // Only propagate if timer output is high
             case 'and-gate':
             case 'or-gate':
             case 'not-gate':

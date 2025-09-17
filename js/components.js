@@ -467,6 +467,184 @@ class Wire extends Component {
     }
 }
 
+// Timer/Delay Component
+class Timer extends Component {
+    constructor(x, y) {
+        super('timer', x, y);
+        this.delayTime = 2000; // Default delay time in milliseconds
+        this.isDelaying = false;
+        this.delayStartTime = 0;
+        this.inputPowered = false;
+        this.outputPowered = false;
+        this.remainingTime = 0;
+    }
+    
+    draw(ctx) {
+        // Apply rotation transform if needed
+        const transformed = this.applyRotation(ctx);
+        
+        // Draw timer body with PCB-style appearance
+        ctx.fillStyle = this.isDelaying ? '#4a4a8a' : '#2a2a4a'; // Blue when delaying
+        ctx.fillRect(this.x + 2, this.y + 2, 16, 16);
+        
+        // Draw PCB-style border
+        ctx.strokeStyle = '#4a7c59';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x + 2, this.y + 2, 16, 16);
+        
+        // Draw copper terminals
+        ctx.fillStyle = '#cd7f32'; // Copper color
+        ctx.fillRect(this.x, this.y + 8, 2, 4); // Left terminal (input)
+        ctx.fillRect(this.x + 18, this.y + 8, 2, 4); // Right terminal (output)
+        
+        // Draw clock/timer symbol
+        ctx.strokeStyle = this.isDelaying ? '#ffff00' : '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(this.x + 10, this.y + 10, 6, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw clock hands/progress indicator
+        if (this.isDelaying && this.delayTime > 0) {
+            const progress = (Date.now() - this.delayStartTime) / this.delayTime;
+            const angle = (progress * 2 * Math.PI) - (Math.PI / 2); // Start from top
+            
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.x + 10, this.y + 10);
+            ctx.lineTo(
+                this.x + 10 + Math.cos(angle) * 4,
+                this.y + 10 + Math.sin(angle) * 4
+            );
+            ctx.stroke();
+        } else {
+            // Static clock hands when not active
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(this.x + 10, this.y + 10);
+            ctx.lineTo(this.x + 10, this.y + 6); // 12 o'clock
+            ctx.moveTo(this.x + 10, this.y + 10);
+            ctx.lineTo(this.x + 13, this.y + 10); // 3 o'clock
+            ctx.stroke();
+        }
+        
+        // Draw "T" for Timer
+        ctx.fillStyle = this.isDelaying ? '#ffff00' : '#cccccc';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('T', this.x + 10, this.y + 4);
+        
+        // Input power indicator
+        if (this.inputPowered) {
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x - 1, this.y + 7, 3, 6);
+        }
+        
+        // Output power indicator
+        if (this.outputPowered) {
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x + 17, this.y + 7, 3, 6);
+        }
+        
+        // Visual countdown indicator
+        if (this.isDelaying) {
+            const progress = Math.min(1, (Date.now() - this.delayStartTime) / this.delayTime);
+            const barWidth = 16 * progress;
+            
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(this.x + 2, this.y + 17, barWidth, 2);
+            
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(this.x + 2 + barWidth, this.y + 17, 16 - barWidth, 2);
+        }
+        
+        // Restore context if transformation was applied
+        if (transformed) {
+            ctx.restore();
+        }
+    }
+    
+    update() {
+        // Check if input power has changed
+        const newInputPowered = this.powered;
+        
+        // Rising edge detection - start timer when power is applied
+        if (newInputPowered && !this.inputPowered && !this.isDelaying) {
+            this.startDelay();
+        }
+        
+        // Falling edge detection - reset timer when power is removed
+        if (!newInputPowered && this.inputPowered) {
+            this.resetTimer();
+        }
+        
+        this.inputPowered = newInputPowered;
+        
+        // Update delay state
+        if (this.isDelaying) {
+            const currentTime = Date.now();
+            this.remainingTime = Math.max(0, this.delayTime - (currentTime - this.delayStartTime));
+            
+            if (currentTime - this.delayStartTime >= this.delayTime) {
+                this.completeDelay();
+            }
+        }
+    }
+    
+    startDelay() {
+        this.isDelaying = true;
+        this.delayStartTime = Date.now();
+        this.outputPowered = false;
+        this.remainingTime = this.delayTime;
+    }
+    
+    completeDelay() {
+        this.isDelaying = false;
+        this.outputPowered = this.inputPowered; // Output follows input after delay
+        this.remainingTime = 0;
+    }
+    
+    resetTimer() {
+        this.isDelaying = false;
+        this.outputPowered = false;
+        this.remainingTime = 0;
+    }
+    
+    setDelayTime(timeMs) {
+        this.delayTime = Math.max(100, timeMs); // Minimum 100ms delay
+    }
+    
+    getProperties() {
+        return {
+            ...super.getProperties(),
+            delayTime: this.delayTime,
+            isDelaying: this.isDelaying,
+            outputPowered: this.outputPowered,
+            remainingTime: this.remainingTime
+        };
+    }
+    
+    setProperties(props) {
+        super.setProperties(props);
+        if (props.delayTime !== undefined) {
+            this.delayTime = props.delayTime;
+        }
+        if (props.isDelaying !== undefined) {
+            this.isDelaying = props.isDelaying;
+        }
+        if (props.outputPowered !== undefined) {
+            this.outputPowered = props.outputPowered;
+        }
+        if (props.remainingTime !== undefined) {
+            this.remainingTime = props.remainingTime;
+        }
+    }
+}
+
 // Buzzer Component
 class Buzzer extends Component {
     constructor(x, y) {
@@ -784,6 +962,8 @@ class ComponentFactory {
                 return new Wire(x, y);
             case 'buzzer':
                 return new Buzzer(x, y);
+            case 'timer':
+                return new Timer(x, y);
             case 'and-gate':
                 return new ANDGate(x, y);
             case 'or-gate':
